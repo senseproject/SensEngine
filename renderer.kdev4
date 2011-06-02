@@ -1,0 +1,4 @@
+[Project]
+Name=renderer
+Manager=KDevCMakeManager
+VersionControl=kdevgit
