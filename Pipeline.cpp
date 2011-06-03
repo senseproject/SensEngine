@@ -3,6 +3,7 @@
 
 #include <stdexcept>
 #include <cstdlib>
+#include <cstdio>
 
 void launchLoaderThread(Pipeline *pipe) {
   pipe->runLoaderThread();
@@ -23,6 +24,7 @@ void Pipeline::runLoaderThread() {
 
 Pipeline::Pipeline() : loader_init_complete(false) {
   platformInit();
+  glewExperimental = GL_TRUE;
   glewInit();
 
   platformDetachContext(); // On X11, the context can't be current when we setup the loader thread
@@ -32,6 +34,18 @@ Pipeline::Pipeline() : loader_init_complete(false) {
   if(!loader_error_string.empty()) {
     platformFinish();
     throw std::runtime_error(loader_error_string.c_str());
+  }
+
+  // TODO: store this information someplace useful; move this to a function 
+  if(GLEW_NVX_gpu_memory_info) {
+    int mem;
+    glGetIntegerv(GL_GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX, &mem);
+    printf("Video Memory: %dk\n", mem);
+  } else if(GLEW_ATI_meminfo) {
+    printf("ATI_meminfo is unimplemented; assuming 256MB");
+    // I'm not even sure how to parse ATI_meminfo correctly. Need to do science on it!
+  } else {
+    printf("I can't get the GPU memory size from this card; assuming 256MB");
   }
 }
 

@@ -24,6 +24,8 @@ ENDIF(WIN32)
 
 FIND_PACKAGE(OpenGL REQUIRED)
 
-add_executable(renderer_demo main.cpp Pipeline.cpp Pipeline_${PLATFORM}.cpp)
+ADD_DEFINITIONS(-DGLEW_STATIC)
+INCLUDE_DIRECTORIES("3rdparty/glew")
+add_executable(renderer_demo main.cpp Pipeline.cpp Pipeline_${PLATFORM}.cpp ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/glew/glew.c)
 
-TARGET_LINK_LIBRARIES(renderer_demo ${OPENGL_gl_LIBRARY} ${PLATFORM_LIBRARIES} GLEW)
+TARGET_LINK_LIBRARIES(renderer_demo ${OPENGL_gl_LIBRARY} ${PLATFORM_LIBRARIES})
