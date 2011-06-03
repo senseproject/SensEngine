@@ -12,7 +12,6 @@ void Pipeline::runLoaderThread() {
   try {
   platformInitLoader();
   } catch (std::exception& e) {
-    loader_init_error = true;
     loader_error_string = e.what();
   }
   loader_init_complete = true;
@@ -22,7 +21,7 @@ void Pipeline::runLoaderThread() {
   }
 }
 
-Pipeline::Pipeline() : loader_init_complete(false), loader_init_error(false) {
+Pipeline::Pipeline() : loader_init_complete(false) {
   platformInit();
   glewInit();
 
@@ -30,7 +29,7 @@ Pipeline::Pipeline() : loader_init_complete(false), loader_init_error(false) {
   loader_thread = std::thread(std::bind(launchLoaderThread, this));
   while(!loader_init_complete);
   platformAttachContext();
-  if(loader_init_error) {
+  if(!loader_error_string.empty()) {
     platformFinish();
     throw std::runtime_error(loader_error_string.c_str());
   }

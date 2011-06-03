@@ -15,7 +15,6 @@ private:
   PipelinePlatform *platform;
   std::thread loader_thread;
   bool loader_init_complete;
-  bool loader_init_error;
   std::string loader_error_string;
 
   void platformInit();
