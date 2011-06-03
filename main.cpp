@@ -1,6 +1,15 @@
-#include <iostream>
+#include "Pipeline.hpp"
+
+struct DemoConsole : public Pipeline::KbdCallback {
+  virtual ~DemoConsole() {}
+  void operator()(Keysym, uint32_t) {}
+};
 
 int main(int argc, char **argv) {
-    std::cout << "Hello, world!" << std::endl;
-    return 0;
+    Pipeline p;
+    p.pushKbdCallback(new DemoConsole);
+    while(1) {
+      p.beginFrame();
+      p.endFrame();
+    }
 }
