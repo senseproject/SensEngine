@@ -137,11 +137,17 @@ void Pipeline::platformInit() {
   GLXContext ctx = platform->ctx = CreateContextAttribs(dpy, fbc, 0, True, context_attribs);
   if(!ctx)
     throw std::runtime_error("Could not create the OpenGL context");
-
+  try {
+  if(!glXIsDirect(dpy, ctx))
+    throw std::runtime_error("Can only use a direct context");
   glXMakeContextCurrent(dpy, win, win, ctx);
-  
+  } catch (std::exception&) {
+    glXDestroyContext(dpy, ctx);
+    throw;
+  }
   } catch (std::exception&) {
     XDestroyWindow(dpy, win);
+    throw;
   }
   } catch (std::exception&) {
     XCloseDisplay(dpy);
@@ -175,10 +181,17 @@ void Pipeline::platformInitLoader() {
   GLXContext ctx = platform->loader_ctx = CreateContextAttribs(dpy, fbc, platform->ctx, True, context_attribs);
   if(!ctx)
     throw std::runtime_error("Could not create the OpenGL context");
+  try {
+  if(!glXIsDirect(dpy, ctx))
+    throw std::runtime_error("Loader context is indirect");
   glXMakeContextCurrent(dpy, pb, pb, ctx);
-
+  } catch (std::exception&) {
+    glXDestroyContext(dpy, ctx);
+    throw;
+  }
   } catch (std::exception&) {
     glXDestroyPbuffer(dpy, pb);
+    throw;
   }
   } catch (std::exception&) {
     XCloseDisplay(dpy);

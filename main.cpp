@@ -10,6 +10,7 @@ int main(int argc, char **argv) {
     p.pushKbdCallback(new DemoConsole);
     while(1) {
       p.beginFrame();
+      p.render();
       p.endFrame();
     }
 }
