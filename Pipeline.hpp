@@ -63,6 +63,9 @@ private:
   std::set<int> fsaa_levels;
   int cur_fsaa;
 
+  // non-opengl settings
+  int width, height;
+
   GpuMemAvailable queryAvailableMem();
 
   void platformInit();

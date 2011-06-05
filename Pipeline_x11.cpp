@@ -1,4 +1,5 @@
 #include "Pipeline.hpp"
+#include "GL/glew.h"
 #include <GL/glx.h>
 #include <GL/glxext.h>
 #include <X11/Xlib.h>
@@ -127,7 +128,7 @@ void Pipeline::platformInit() {
   swa.event_mask = StructureNotifyMask; // TODO: Add more event masks as needed
 
   // Create the window
-  Window win = platform->win = XCreateWindow(dpy, RootWindow(dpy, vi->screen), 0, 0, 800, 600, 0, vi->depth, InputOutput, vi->visual, CWBorderPixel|CWColormap|CWEventMask, &swa);
+  Window win = platform->win = XCreateWindow(dpy, RootWindow(dpy, vi->screen), 0, 0, width, height, 0, vi->depth, InputOutput, vi->visual, CWBorderPixel|CWColormap|CWEventMask, &swa);
   if(!win)
     throw std::runtime_error("Could not create X11 window");
 
@@ -252,6 +253,18 @@ bool Pipeline::platformEventLoop() {
           return false;
         }
         break;
+      case ConfigureNotify: {
+        int nwidth = xevt.xconfigure.width;
+        int nheight = xevt.xconfigure.height;
+        if(nwidth != width || nheight != height) {
+          width = nwidth;
+          height = nheight;
+          glBindFramebuffer(GL_FRAMEBUFFER, 0);
+          glViewport(0, 0, width, height);
+          setupRenderTargets();
+        }
+        break;
+      }
       default:
         break;
     }

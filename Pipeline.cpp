@@ -175,7 +175,7 @@ Pipeline::hRenderTarget Pipeline::createRenderTarget() {
   return target;
 }
 
-Pipeline::Pipeline() : loader_init_complete(false) {
+Pipeline::Pipeline() : loader_init_complete(false), width(800), height(600) {
   platformInit();
   glewExperimental = GL_TRUE;
   glewInit();
@@ -231,6 +231,8 @@ Pipeline::~Pipeline() {
 }
 
 void Pipeline::setupRenderTargets() {
+  if(!default_framebuffer || !gbuffer_framebuffer)
+    return;
   default_framebuffer->bound_textures.clear();
   gbuffer_framebuffer->bound_textures.clear();
 
@@ -240,11 +242,12 @@ void Pipeline::setupRenderTargets() {
   default_framebuffer->bound_textures.push_back(main_plane);
   GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, default_framebuffer->id))
   GL_CHECK(glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, main_plane->id))
-  GL_CHECK(glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, cur_fsaa, GL_RGBA16F, 800, 600, GL_FALSE))
+  GL_CHECK(glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, cur_fsaa, GL_RGBA16F, width, height, GL_FALSE))
   GL_CHECK(glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, depth->id))
-  GL_CHECK(glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, cur_fsaa, GL_DEPTH24_STENCIL8, 800, 600, GL_FALSE))
+  GL_CHECK(glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, cur_fsaa, GL_DEPTH24_STENCIL8, width, height, GL_FALSE))
   GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, main_plane->id, 0))
   GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D_MULTISAMPLE, depth->id, 0))
+  GL_CHECK(glViewport(0, 0, width, height))
   FBO_CHECK
 
   hTexture rgbm = createTargetTexture();
@@ -254,12 +257,13 @@ void Pipeline::setupRenderTargets() {
   gbuffer_framebuffer->bound_textures.push_back(nor);
   GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, gbuffer_framebuffer->id))
   GL_CHECK(glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, rgbm->id))
-  GL_CHECK(glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, cur_fsaa, GL_RGBA8, 800, 600, GL_FALSE))
+  GL_CHECK(glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, cur_fsaa, GL_RGBA8, width, height, GL_FALSE))
   GL_CHECK(glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, nor->id))
-  GL_CHECK(glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, cur_fsaa, GL_RG16F, 800, 600, GL_FALSE))
+  GL_CHECK(glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, cur_fsaa, GL_RG16F, width, height, GL_FALSE))
   GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D_MULTISAMPLE, depth->id, 0))
   GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, rgbm->id, 0))
   GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D_MULTISAMPLE, nor->id, 0))
+  GL_CHECK(glViewport(0, 0, width, height))
   FBO_CHECK
 }
 
@@ -282,7 +286,7 @@ void Pipeline::render() {
 void Pipeline::endFrame() {
   GL_CHECK(glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0))
   // TODO: convert this blit into a tonemapping operation of some sort
-  GL_CHECK(glBlitFramebuffer(0, 0, 800, 600, 0, 0, 800, 600, GL_COLOR_BUFFER_BIT, GL_NEAREST))
+  GL_CHECK(glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST))
   platformSwap();
 }
 
