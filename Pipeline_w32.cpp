@@ -17,6 +17,10 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
     case WM_CLOSE:
       pipe->platformSetWndProcRet(false);
       return 0;
+    case WM_SIZE:
+      pipe->width = LOWORD(lParam);
+      pipe->height = HIWORD(lParam);
+      pipe->setupRenderTargets();
   }
   return DefWindowProc(hwnd, msg, wParam, lParam);
 }

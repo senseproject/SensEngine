@@ -78,6 +78,11 @@ private:
 
   void setupRenderTargets();
 
+#ifdef WIN32
+  bool platformWndProcReturn;
+  void platformSetWndProcRet(bool b) { platformWndProcReturn = b; }
+#endif
+
 protected:
   void runLoaderThread();
 
@@ -88,11 +93,6 @@ protected:
   hTexture createTexture(std::string);
   hTexture createTargetTexture();
   hRenderTarget createRenderTarget();
-
-#ifdef WIN32
-  bool platformWndProcReturn;
-  void platformSetWndProcRet(bool b) { platformWndProcReturn = b; }
-#endif
 
 public:
   Pipeline();
