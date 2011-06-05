@@ -93,10 +93,6 @@ public:
   }
 };
 
-#ifdef _MSC_VER
-#define USE_LOCKED_QUEUE
-#endif
-
 #ifdef USE_LOCKED_QUEUE
 template <typename T>
 class queue : public lockedQueue<T> {};
