@@ -7,6 +7,27 @@
 #include <cstdlib>
 #include <cstdio>
 
+// Loader message types
+enum LoaderMessages {
+  LoaderMsgLoadTexture,
+  LoaderMsgUnloadTexture,
+  LoaderMsgShutdown,
+};
+
+// Builtin texture data
+unsigned int tex_builtin_default[] =
+{
+  0x00555555, 0x00555555, 0x00555555, 0x00555555, 0x00AAAAAA, 0x00AAAAAA, 0x00AAAAAA, 0x00AAAAAA,
+  0x00555555, 0x00555555, 0x00555555, 0x00555555, 0x00AAAAAA, 0x00AAAAAA, 0x00AAAAAA, 0x00AAAAAA,
+  0x00555555, 0x00555555, 0x00555555, 0x00555555, 0x00AAAAAA, 0x00AAAAAA, 0x00AAAAAA, 0x00AAAAAA,
+  0x00555555, 0x00555555, 0x00555555, 0x00555555, 0x00AAAAAA, 0x00AAAAAA, 0x00AAAAAA, 0x00AAAAAA,
+  0x00AAAAAA, 0x00AAAAAA, 0x00AAAAAA, 0x00AAAAAA, 0x00555555, 0x00555555, 0x00555555, 0x00555555,
+  0x00AAAAAA, 0x00AAAAAA, 0x00AAAAAA, 0x00AAAAAA, 0x00555555, 0x00555555, 0x00555555, 0x00555555,
+  0x00AAAAAA, 0x00AAAAAA, 0x00AAAAAA, 0x00AAAAAA, 0x00555555, 0x00555555, 0x00555555, 0x00555555,
+  0x00AAAAAA, 0x00AAAAAA, 0x00AAAAAA, 0x00AAAAAA, 0x00555555, 0x00555555, 0x00555555, 0x00555555,
+};
+
+
 static const char* glErrorString(GLenum err) {
   switch(err) {
     case GL_INVALID_ENUM: return "Invalid Enum";
@@ -41,10 +62,10 @@ public:
   fbo_error(std::string location, GLenum status) : std::runtime_error(fboErrorString(status)+location) {}
 };
 
+#ifndef NDEBUG
 #define STRING(X) #X
 #define TOSTRING(X) STRING(X)
 #define FILE_LINE " @ " __FILE__ ":" TOSTRING(__LINE__)
-#ifndef NDEBUG
 #define GL_CHECK(func) func; { GLenum glerr = glGetError(); if(GL_NO_ERROR != glerr) throw gl_error(FILE_LINE, glerr); }
 #define FBO_CHECK { GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER); if(GL_FRAMEBUFFER_COMPLETE != status) throw fbo_error(FILE_LINE, status); }
 #else
@@ -82,13 +103,37 @@ void Pipeline::runLoaderThread() {
   }
   loader_init_complete = true;
 
-  for(;;) {
-    // TODO: add loader job logic
+  
+  for(bool done=false; !done;) {
+    LoaderMsg msg;
+    while(loader_queue.try_pop(msg)) {
+      switch(msg.first) {
+        case LoaderMsgLoadTexture: {
+          GLuint tex;
+          glGenTextures(1, &tex);
+          glBindTexture(tex);
+          GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 4, 4, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex_builtin_default))
+          GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST))
+          GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST))
+          glFlush();
+          ((Texture*)msg.second)->id = tex;
+          // TODO: add this texture to the "load more data" queue
+          break;
+        }
+        case LoaderMsgShutdown:
+          done=true;
+          break;
+      }
+    }
   }
+
+  platformFinishLoader();
 }
 
 void Pipeline::deleteTexture(Texture *p) {
-  // TODO: push a TextureDelete message to the loader thread
+  if(p->id != default_texture->id) { // don't accidentally trash every texture that's still loading...
+    loader_queue.push(LoaderMsg(LoaderMsgUnloadTexture, p));
+  }
   delete p;
 }
 
@@ -100,6 +145,14 @@ void Pipeline::deleteTargetTexture(Pipeline::Texture* p) {
 void Pipeline::deleteRenderTarget(Pipeline::RenderTarget* p) {
   glDeleteFramebuffers(1, (GLuint*)&(p->id));
   delete p;
+}
+
+Pipeline::hTexture Pipeline::createTexture(std::string name) {
+  hTexture tex = hTexture(new Texture);
+  tex->id = default_texture->id;
+  tex->name = name;
+  loader_queue.push(LoaderMsg(LoaderMsgLoadTexture, tex.get()));
+  return tex;
 }
 
 Pipeline::hTexture Pipeline::createTargetTexture() {
@@ -128,6 +181,7 @@ Pipeline::Pipeline() : loader_init_complete(false) {
   while(!loader_init_complete);
   platformAttachContext();
   if(!loader_error_string.empty()) {
+    loader_thread.join();
     platformFinish();
     throw std::runtime_error(loader_error_string.c_str());
   }
@@ -140,6 +194,7 @@ Pipeline::Pipeline() : loader_init_complete(false) {
 
   // Enable some standard state
   GL_CHECK(glEnable(GL_MULTISAMPLE))
+  glClearColor(0.5f, 0.5f, 0.5f, 1.f);
 
   // Create the HDR lighting buffer
   hRenderTarget main_framebuffer = createRenderTarget();
@@ -150,12 +205,8 @@ Pipeline::Pipeline() : loader_init_complete(false) {
   GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, main_framebuffer->id))
   GL_CHECK(glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, main_plane->id))
   GL_CHECK(glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, fsaa_count, GL_RGBA16F, 800, 600, GL_FALSE))
-  GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST))
-  GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST))
   GL_CHECK(glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, depth->id))
   GL_CHECK(glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, fsaa_count, GL_DEPTH24_STENCIL8, 800, 600, GL_FALSE))
-  GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST))
-  GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST))
   GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, main_plane->id, 0))
   GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D_MULTISAMPLE, depth->id, 0))
   FBO_CHECK
@@ -171,18 +222,21 @@ Pipeline::Pipeline() : loader_init_complete(false) {
   GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, gbuf_framebuffer->id))
   GL_CHECK(glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, rgbm->id))
   GL_CHECK(glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, fsaa_count, GL_RGBA8, 800, 600, GL_FALSE))
-  GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST))
-  GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST))
   GL_CHECK(glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, nor->id))
   GL_CHECK(glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, fsaa_count, GL_RG16F, 800, 600, GL_FALSE))
-  GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST))
-  GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST))
   GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D_MULTISAMPLE, depth->id, 0))
   GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, rgbm->id, 0))
   GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D_MULTISAMPLE, nor->id, 0))
   FBO_CHECK
   gbuffer_framebuffer = gbuf_framebuffer;
-  glClearColor(1.f, 0.f, 0.f, 1.f);
+
+  // Create a default texture as a placeholder when we're streaming something in
+  hTexture def_tex = createTargetTexture(); // not really a render target, but this gives us a main-thread-owned texture
+  GL_CHECK(glBindTexture(GL_TEXTURE_2D, def_tex->id))
+  GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 4, 4, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex_builtin_default))
+  GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST))
+  GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST))
+  default_texture = def_tex;
 
   GpuMemAvailable mem = queryAvailableMem();
   printf("Current FSAA setting:\t%d\n", fsaa_count);
@@ -190,6 +244,12 @@ Pipeline::Pipeline() : loader_init_complete(false) {
 }
 
 Pipeline::~Pipeline() {
+  gbuffer_framebuffer = hRenderTarget();
+  default_framebuffer = hRenderTarget();
+  current_framebuffer = hRenderTarget();
+  default_texture = hTexture();
+  loader_queue.push(LoaderMsg(LoaderMsgShutdown, const_cast<char*>("")));
+  loader_thread.join();
   platformFinish();
 }
 

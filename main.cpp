@@ -6,11 +6,13 @@ struct DemoConsole : public Pipeline::KbdCallback {
 };
 
 int main(int argc, char **argv) {
-    Pipeline p;
-    p.pushKbdCallback(new DemoConsole);
-    while(1) {
-      p.beginFrame();
-      p.render();
-      p.endFrame();
-    }
+  Pipeline p;
+  p.pushKbdCallback(new DemoConsole);
+  for(;;) {
+    p.beginFrame();
+    p.render();
+    p.endFrame();
+    if(!p.platformEventLoop())
+      break;
+  }
 }

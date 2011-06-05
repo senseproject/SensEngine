@@ -17,6 +17,11 @@ struct PipelinePlatform {
   GLXContext loader_ctx;
 };
 
+namespace {
+  Atom WM_PROTOCOLS;
+  Atom WM_DELETE_WINDOW;
+};
+
 // Helper to check for extension string presence.  Adapted from:
 //   http://www.opengl.org/resources/features/OGLextensions/
 static bool isExtensionSupported(const char *extList, const char *extension) {
@@ -47,6 +52,10 @@ static bool isExtensionSupported(const char *extList, const char *extension) {
   }
 
   return false;
+}
+
+static Bool predicate(Display*, XEvent*, XPointer) {
+  return 1;
 }
 
 static int visual_attribs[] = {
@@ -158,6 +167,12 @@ void Pipeline::platformInit() {
     platform = 0;
     throw;
   }
+
+  // GLX initialization is done. Let's get our window to be a bit more modern
+  WM_PROTOCOLS = XInternAtom(platform->dpy, "WM_PROTOCOLS", False);
+  WM_DELETE_WINDOW = XInternAtom(platform->dpy, "WM_DELETE_WINDOW", False);
+  Atom protocols[] = { WM_DELETE_WINDOW };
+  XSetWMProtocols(platform->dpy, platform->win, protocols, 1);
 }
 
 void Pipeline::platformInitLoader() {
@@ -204,8 +219,16 @@ void Pipeline::platformFinish() {
   glXDestroyContext(platform->dpy, platform->ctx);
   XDestroyWindow(platform->dpy, platform->win);
   XFreeColormap(platform->dpy, platform->cmap);
+  XCloseDisplay(platform->dpy);
   delete platform;
   platform = 0;
+}
+
+void Pipeline::platformFinishLoader() {
+  glXMakeContextCurrent(platform->loader_dpy, 0, 0, 0);
+  glXDestroyContext(platform->loader_dpy, platform->loader_ctx);
+  glXDestroyPbuffer(platform->loader_dpy, platform->loader_pb);
+  XCloseDisplay(platform->loader_dpy);
 }
 
 void Pipeline::platformSwap() {
@@ -218,4 +241,20 @@ void Pipeline::platformAttachContext() {
 
 void Pipeline::platformDetachContext() {
   glXMakeContextCurrent(platform->dpy, 0, 0, 0);
+}
+
+bool Pipeline::platformEventLoop() {
+  XEvent xevt;
+  while(XCheckIfEvent(platform->dpy, &xevt, predicate, 0)) {
+    switch(xevt.type) {
+      case ClientMessage:
+        if(xevt.xclient.message_type == WM_PROTOCOLS && (unsigned long)xevt.xclient.data.l[0] == WM_DELETE_WINDOW) {
+          return false;
+        }
+        break;
+      default:
+        break;
+    }
+  }
+  return true;
 }
