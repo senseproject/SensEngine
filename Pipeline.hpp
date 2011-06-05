@@ -2,10 +2,12 @@
 #define Pipeline_hpp
 
 #include <cstdint>
-#include <boost/thread.hpp>
+#include <memory>
+#include <set>
 #include <unordered_map>
 #include <vector>
-#include <memory>
+
+#include <boost/thread.hpp>
 
 #include "queue.hpp"
 
@@ -58,8 +60,8 @@ private:
   hRenderTarget gbuffer_framebuffer;
 
   // Various OpenGL limits and settings
-  int max_fsaa;
-  int fsaa_count;
+  std::set<int> fsaa_levels;
+  int cur_fsaa;
 
   GpuMemAvailable queryAvailableMem();
 
@@ -70,6 +72,8 @@ private:
   void platformSwap();
   void platformDetachContext();
   void platformAttachContext();
+
+  void setupRenderTargets();
 
 protected:
   void runLoaderThread();
@@ -95,6 +99,10 @@ public:
   bool platformEventLoop();
 
   void setRenderTarget(hRenderTarget);
+
+  // functions to set rendering options (FSAA, ANISO, &c)
+  const std::set<int>& fsaaLevels() const { return fsaa_levels; }
+  void setFsaa(int i) { if(fsaa_levels.find(i) != fsaa_levels.end()) { cur_fsaa = i; setupRenderTargets(); }}
 
   // These are all used as callbacks
   friend void launchLoaderThread(Pipeline*);

@@ -193,58 +193,31 @@ Pipeline::Pipeline() : loader_init_complete(false) {
   int dsamples, csamples;
   glGetIntegerv(GL_MAX_DEPTH_TEXTURE_SAMPLES, &dsamples);
   glGetIntegerv(GL_MAX_COLOR_TEXTURE_SAMPLES, &csamples);
-  max_fsaa = std::min(dsamples, csamples);
-  fsaa_count = 4; // A nice value for testing
+  int fsaa = std::min(dsamples, csamples);
+  cur_fsaa = fsaa;
+  do {
+    fsaa_levels.insert(fsaa);
+    fsaa /= 2;
+  } while(fsaa > 1);
+  
 
   // Enable some standard state
   GL_CHECK(glEnable(GL_MULTISAMPLE))
   glClearColor(0.5f, 0.5f, 0.5f, 1.f);
 
-  // Create the HDR lighting buffer
-  hRenderTarget main_framebuffer = createRenderTarget();
-  hTexture main_plane = createTargetTexture();
-  hTexture depth = createTargetTexture();
-  main_framebuffer->bound_textures.push_back(depth);
-  main_framebuffer->bound_textures.push_back(main_plane);
-  GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, main_framebuffer->id))
-  GL_CHECK(glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, main_plane->id))
-  GL_CHECK(glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, fsaa_count, GL_RGBA16F, 800, 600, GL_FALSE))
-  GL_CHECK(glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, depth->id))
-  GL_CHECK(glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, fsaa_count, GL_DEPTH24_STENCIL8, 800, 600, GL_FALSE))
-  GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, main_plane->id, 0))
-  GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D_MULTISAMPLE, depth->id, 0))
-  FBO_CHECK
-  current_framebuffer = default_framebuffer = main_framebuffer;
-
-  // Create the gbuffer
-  hRenderTarget gbuf_framebuffer = createRenderTarget();
-  hTexture rgbm = createTargetTexture();
-  hTexture nor = createTargetTexture();
-  gbuf_framebuffer->bound_textures.push_back(depth);
-  gbuf_framebuffer->bound_textures.push_back(rgbm);
-  gbuf_framebuffer->bound_textures.push_back(nor);
-  GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, gbuf_framebuffer->id))
-  GL_CHECK(glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, rgbm->id))
-  GL_CHECK(glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, fsaa_count, GL_RGBA8, 800, 600, GL_FALSE))
-  GL_CHECK(glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, nor->id))
-  GL_CHECK(glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, fsaa_count, GL_RG16F, 800, 600, GL_FALSE))
-  GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D_MULTISAMPLE, depth->id, 0))
-  GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, rgbm->id, 0))
-  GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D_MULTISAMPLE, nor->id, 0))
-  FBO_CHECK
-  gbuffer_framebuffer = gbuf_framebuffer;
+  // Create our FBOs
+  default_framebuffer = createRenderTarget();
+  gbuffer_framebuffer = createRenderTarget();
+  setupRenderTargets();
+  setRenderTarget(default_framebuffer);
 
   // Create a default texture as a placeholder when we're streaming something in
   hTexture def_tex = createTargetTexture(); // not really a render target, but this gives us a main-thread-owned texture
   GL_CHECK(glBindTexture(GL_TEXTURE_2D, def_tex->id))
-  GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 4, 4, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex_builtin_default))
+  GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 8, 8, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex_builtin_default))
   GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST))
   GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST))
   default_texture = def_tex;
-
-  GpuMemAvailable mem = queryAvailableMem();
-  printf("Current FSAA setting:\t%d\n", fsaa_count);
-  printf("Available texture mem:\t%d\nAvailable render mem:\t%d\nAvailable buffer mem:\t%d\n", mem.texture, mem.render, mem.buffer);
 }
 
 Pipeline::~Pipeline() {
@@ -255,6 +228,39 @@ Pipeline::~Pipeline() {
   loader_queue.push(LoaderMsg(LoaderMsgShutdown, const_cast<char*>("")));
   loader_thread.join();
   platformFinish();
+}
+
+void Pipeline::setupRenderTargets() {
+  default_framebuffer->bound_textures.clear();
+  gbuffer_framebuffer->bound_textures.clear();
+
+  hTexture main_plane = createTargetTexture();
+  hTexture depth = createTargetTexture();
+  default_framebuffer->bound_textures.push_back(depth);
+  default_framebuffer->bound_textures.push_back(main_plane);
+  GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, default_framebuffer->id))
+  GL_CHECK(glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, main_plane->id))
+  GL_CHECK(glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, cur_fsaa, GL_RGBA16F, 800, 600, GL_FALSE))
+  GL_CHECK(glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, depth->id))
+  GL_CHECK(glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, cur_fsaa, GL_DEPTH24_STENCIL8, 800, 600, GL_FALSE))
+  GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, main_plane->id, 0))
+  GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D_MULTISAMPLE, depth->id, 0))
+  FBO_CHECK
+
+  hTexture rgbm = createTargetTexture();
+  hTexture nor = createTargetTexture();
+  gbuffer_framebuffer->bound_textures.push_back(depth);
+  gbuffer_framebuffer->bound_textures.push_back(rgbm);
+  gbuffer_framebuffer->bound_textures.push_back(nor);
+  GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, gbuffer_framebuffer->id))
+  GL_CHECK(glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, rgbm->id))
+  GL_CHECK(glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, cur_fsaa, GL_RGBA8, 800, 600, GL_FALSE))
+  GL_CHECK(glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, nor->id))
+  GL_CHECK(glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, cur_fsaa, GL_RG16F, 800, 600, GL_FALSE))
+  GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D_MULTISAMPLE, depth->id, 0))
+  GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, rgbm->id, 0))
+  GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D_MULTISAMPLE, nor->id, 0))
+  FBO_CHECK
 }
 
 void Pipeline::pushKbdCallback(Pipeline::KbdCallback* )
