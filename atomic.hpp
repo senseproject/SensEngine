@@ -10,11 +10,11 @@
   #include <windows.h>
   #define fetchAndIncrementP(var) InterlockedExchangeAdd(&var, 1)
   #define fetchAndDecrementP(var) InterlockedExchangeAdd(&var, -1)
-  #define compareAndSwapP(var, old_val, new_val) InterlockedCompareExchange(var, old_val, new_val)
+  #define compareAndSwapP(var, old_val, new_val) InterlockedCompareExchange((DWORD*)var, (DWORD)old_val, (DWORD)new_val)
   #ifdef _M_AMD64
-    #define compareAndSwapPointerP(var, old_val, new_val) InterlockedCompareExchange64(var, old_val, new_val)
+    #define compareAndSwapPointerP(var, old_val, new_val) InterlockedCompareExchange64((QWORD*)var, (QWORD)old_val, (QWORD)new_val)
   #else
-    #define compareAndSwapPointerP(var, old_val, new_val) compareAndSwap(var, old_val, new_val)
+    #define compareAndSwapPointerP(var, old_val, new_val) compareAndSwapP(var, old_val, new_val)
   #endif
 #else
 #error "Sorry, don't know how to do atomic operations on your compiler"

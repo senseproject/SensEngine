@@ -2,7 +2,7 @@
 #define QNT_CORE_UTIL_QUEUE_HPP
 
 #include <deque>
-#include <thread>
+#include <boost/thread.hpp>
 
 #include "atomic.hpp"
 
