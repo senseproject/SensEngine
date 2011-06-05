@@ -111,7 +111,7 @@ void Pipeline::runLoaderThread() {
         case LoaderMsgLoadTexture: {
           GLuint tex;
           glGenTextures(1, &tex);
-          glBindTexture(tex);
+          glBindTexture(GL_TEXTURE_2D, tex);
           GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 4, 4, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex_builtin_default))
           GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST))
           GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST))
@@ -119,6 +119,11 @@ void Pipeline::runLoaderThread() {
           ((Texture*)msg.second)->id = tex;
           // TODO: add this texture to the "load more data" queue
           break;
+        }
+        case LoaderMsgUnloadTexture: {
+          Texture *tex = (Texture*)msg.second;
+          glDeleteTextures(1, (GLuint*)&(tex->id));
+          delete tex;
         }
         case LoaderMsgShutdown:
           done=true;
@@ -134,7 +139,6 @@ void Pipeline::deleteTexture(Texture *p) {
   if(p->id != default_texture->id) { // don't accidentally trash every texture that's still loading...
     loader_queue.push(LoaderMsg(LoaderMsgUnloadTexture, p));
   }
-  delete p;
 }
 
 void Pipeline::deleteTargetTexture(Pipeline::Texture* p) {
@@ -177,7 +181,7 @@ Pipeline::Pipeline() : loader_init_complete(false) {
   glewInit();
 
   platformDetachContext(); // On X11, the context can't be current when we setup the loader thread
-  loader_thread = std::thread(std::bind(launchLoaderThread, this));
+  loader_thread = boost::thread(std::bind(launchLoaderThread, this));
   while(!loader_init_complete);
   platformAttachContext();
   if(!loader_error_string.empty()) {

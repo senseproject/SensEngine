@@ -2,7 +2,7 @@
 #define Pipeline_hpp
 
 #include <cstdint>
-#include <thread>
+#include <boost/thread.hpp>
 #include <unordered_map>
 #include <vector>
 #include <memory>
@@ -47,7 +47,7 @@ private:
   // loader stuff
   typedef std::pair<uint32_t, void*> LoaderMsg;
   queue<LoaderMsg> loader_queue;
-  std::thread loader_thread;
+  boost::thread loader_thread;
   bool loader_init_complete;
   std::string loader_error_string;
 
