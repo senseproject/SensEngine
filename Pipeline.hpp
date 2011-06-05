@@ -89,6 +89,11 @@ protected:
   hTexture createTargetTexture();
   hRenderTarget createRenderTarget();
 
+#ifdef WIN32
+  bool platformWndProcReturn;
+  void platformSetWndProcRet(bool b) { platformWndProcReturn = b; }
+#endif
+
 public:
   Pipeline();
   ~Pipeline();
@@ -112,6 +117,10 @@ public:
   friend struct TextureDealloc;
   friend struct TargetTextureDealloc;
   friend struct RenderTargetDealloc;
+
+#ifdef WIN32
+  friend LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
+#endif
 };
 
 #endif // Pipeline_hpp

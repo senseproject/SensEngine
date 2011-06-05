@@ -12,9 +12,10 @@ struct PipelinePlatform {
 };
 
 static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+  Pipeline *pipe = (Pipeline*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
   switch(msg) {
     case WM_CLOSE:
-      PostQuitMessage(0);
+      pipe->platformSetWndProcRet(false);
       return 0;
   }
   return DefWindowProc(hwnd, msg, wParam, lParam);
@@ -47,6 +48,8 @@ static int context_attribs[] = {
   0
 };
 
+const char* window_class = "SenseEngineMainWindow";
+
 PFNWGLCREATECONTEXTATTRIBSARBPROC CreateContextAttribs = 0;
 PFNWGLCHOOSEPIXELFORMATARBPROC ChoosePixelFormatARB = 0;
 
@@ -65,7 +68,7 @@ void Pipeline::platformInit() {
   wc.hCursor = LoadCursor(NULL, IDC_ARROW);
   wc.hbrBackground = 0;
   wc.lpszMenuName = 0;
-  wc.lpszClassName = "SenseEngineMainWindow";
+  wc.lpszClassName = window_class;
 
   if(!RegisterClass(&wc))
     throw std::runtime_error("Could not register window class");
@@ -80,12 +83,12 @@ void Pipeline::platformInit() {
   window_rect.bottom = height;
   AdjustWindowRectEx(&window_rect, dwStyle, FALSE, dwExStyle);
 
-  hwnd = CreateWindowEx(dwExStyle, "SenseEngineMainWindow", "Deferred Renderer Demo", dwStyle, 0, 0,
+  hwnd = CreateWindowEx(dwExStyle, window_class, "Deferred Renderer Demo", dwStyle, 0, 0,
                              window_rect.right - window_rect.left, window_rect.bottom - window_rect.top,
                              NULL, NULL, GetModuleHandle(0), NULL);
   if(!hwnd)
     throw std::runtime_error("Could not create window!");
-
+  SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)this);
   try { // from now on we need to cleanup the main window if there's an error
   PIXELFORMATDESCRIPTOR tmp_pfd;
   memset(&tmp_pfd, 0, sizeof(tmp_pfd));
@@ -144,7 +147,7 @@ void Pipeline::platformInit() {
     throw;
   }
   } catch (std::exception&) {
-    UnregisterClass("SenseEngineMainWindow", (HINSTANCE)GetModuleHandle(0));
+    UnregisterClass(window_class, (HINSTANCE)GetModuleHandle(0));
     throw;
   }
 
@@ -170,6 +173,7 @@ void Pipeline::platformFinish() {
   wglDeleteContext(platform->loader_ctx);
   ReleaseDC(platform->win, platform->dc);
   DestroyWindow(platform->win);
+  UnregisterClass(window_class, (HINSTANCE)GetModuleHandle(0));
 }
 
 void Pipeline::platformFinishLoader() {
@@ -190,11 +194,10 @@ void Pipeline::platformSwap() {
 
 bool Pipeline::platformEventLoop() {
   MSG msg;
-  while(PeekMessage(&msg, 0, 0, 0, PM_REMOVE)) {
-    if(msg.message == WM_QUIT)
-      return false;
+  platformWndProcReturn = true;
+  while(PeekMessage(&msg, 0, 0, 0, PM_REMOVE) && platformWndProcReturn) {
     TranslateMessage(&msg);
     DispatchMessage(&msg);
   }
-  return true;
+  return platformWndProcReturn;
 }
