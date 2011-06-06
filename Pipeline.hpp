@@ -33,6 +33,7 @@ public:
 
   struct RenderTarget {
     volatile uint32_t id;
+    bool build_mips;
     std::vector<hTexture> bound_textures;
   };
   HANDLE(RenderTarget)
@@ -55,6 +56,8 @@ private:
 
   // global OpenGL resources
   hTexture default_texture;
+  hTexture csm_tex_array;
+  hTexture shadowmap;
   hRenderTarget default_framebuffer;
   hRenderTarget current_framebuffer;
   hRenderTarget gbuffer_framebuffer;
@@ -62,6 +65,8 @@ private:
   // Various OpenGL limits and settings
   std::set<int> fsaa_levels;
   int cur_fsaa;
+  int shadowmap_resolution;
+  int num_csm_splits;
 
   // non-opengl settings
   int width, height;
@@ -107,6 +112,7 @@ public:
   bool platformEventLoop();
 
   void setRenderTarget(hRenderTarget);
+  hRenderTarget buildRenderTarget(int w, int h, bool mip=true);
 
   // functions to set rendering options (FSAA, ANISO, &c)
   const std::set<int>& fsaaLevels() const { return fsaa_levels; }
