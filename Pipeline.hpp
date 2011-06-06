@@ -4,11 +4,12 @@
 #include <cstdint>
 #include <memory>
 #include <set>
-#include <unordered_map>
 #include <vector>
 
+//#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-variable"
 #include <boost/thread.hpp>
-
+//#pragma GCC diagnostic pop
 #include "queue.hpp"
 
 #define HANDLE(type) typedef std::shared_ptr<type> h##type;
@@ -59,7 +60,8 @@ private:
   queue<TexLoaderMsg> texloader_queue;
   queue<BufLoaderMsg> bufloader_queue;
   boost::thread loader_thread;
-  bool loader_init_complete;
+  volatile bool loader_init_complete;
+  volatile bool loader_be_done;
   std::string loader_error_string;
 
   // global OpenGL resources
@@ -127,7 +129,6 @@ public:
   void setFsaa(int i) { if(fsaa_levels.find(i) != fsaa_levels.end()) { cur_fsaa = i; setupRenderTargets(); }}
 
   // These are all used as callbacks
-  friend void launchLoaderThread(Pipeline*);
   friend struct TextureDealloc;
   friend struct TargetTextureDealloc;
   friend struct RenderTargetDealloc;

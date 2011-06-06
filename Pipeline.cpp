@@ -13,7 +13,6 @@
 enum LoaderMessages {
   LoaderMsgLoadTexture,
   LoaderMsgUnloadTexture,
-  LoaderMsgShutdown,
 };
 
 // Builtin texture data
@@ -71,10 +70,6 @@ public:
 #define FBO_CHECK
 #endif
 
-void launchLoaderThread(Pipeline *pipe) {
-  pipe->runLoaderThread();
-}
-
 struct TextureDealloc {
   Pipeline *pipe;
   TextureDealloc(Pipeline *pipe) : pipe(pipe) {}
@@ -101,10 +96,10 @@ void Pipeline::runLoaderThread() {
   }
   loader_init_complete = true;
 
-  for(bool done=false; !done;) {
+  while(!loader_be_done) {
     bool loaded_objects_this_loop = false;
     for(BufLoaderMsg bmsg; bufloader_queue.try_pop(bmsg);) {
-      if(done) break;
+      if(loader_be_done) break;
       //TODO: check for various buffer load messages
       loaded_objects_this_loop = true;
     };
@@ -112,7 +107,7 @@ void Pipeline::runLoaderThread() {
       // TODO: add a thread condition to signal object loads are complete
     }
     TexLoaderMsg tmsg;
-    if(!done && texloader_queue.try_pop(tmsg)) {
+    if(!loader_be_done && texloader_queue.try_pop(tmsg)) {
       switch(tmsg.first) {
         case LoaderMsgLoadTexture: {
           throw std::logic_error("Texture loading is not yet implemented!");
@@ -122,7 +117,7 @@ void Pipeline::runLoaderThread() {
           break;
         }
       }
-    } else if(!done) {
+    } else if(!loader_be_done) {
       boost::thread::yield(); // there's nothing on the queue. Let's be a good citizen
     }
   }
@@ -142,7 +137,7 @@ void Pipeline::runLoaderThread() {
 
 void Pipeline::deleteTexture(Texture *p) {
   if(p->id != default_texture->id) { // don't accidentally trash every texture that's still loading...
-    texloader_queue.push(TexLoaderMsg(LoaderMsgUnloadTexture, p));
+    texloader_queue.push(TexLoaderMsg(LoaderMsgUnloadTexture, hTexture(p)));
   }
 }
 
@@ -182,13 +177,13 @@ Pipeline::hRenderTarget Pipeline::createRenderTarget() {
   return target;
 }
 
-Pipeline::Pipeline() : loader_init_complete(false), shadowmap_resolution(512), num_csm_splits(3), width(800), height(600) {
+Pipeline::Pipeline() : loader_init_complete(false), loader_be_done(false), shadowmap_resolution(512), num_csm_splits(3), width(800), height(600) {
   platformInit();
   glewExperimental = GL_TRUE;
   glewInit();
 
   platformDetachContext(); // On X11, the context can't be current when we setup the loader thread
-  loader_thread = boost::thread(std::bind(launchLoaderThread, this));
+  loader_thread = boost::thread(std::mem_fun(&Pipeline::runLoaderThread), this);
   while(!loader_init_complete);
   platformAttachContext();
   if(!loader_error_string.empty()) {
@@ -250,7 +245,7 @@ Pipeline::~Pipeline() {
   default_framebuffer = hRenderTarget();
   current_framebuffer = hRenderTarget();
   default_texture = hTexture();
-  texloader_queue.push(TexLoaderMsg(LoaderMsgShutdown, hTexture()));
+  loader_be_done = true;
   loader_thread.join();
   platformFinish();
 }
