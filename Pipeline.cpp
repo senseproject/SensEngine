@@ -1,4 +1,3 @@
-#include "Pipeline.hpp"
 #include <GL/glew.h>
 
 #include <algorithm>
@@ -6,6 +5,9 @@
 #include <sstream>
 #include <cstdlib>
 #include <cstdio>
+
+#include "Pipeline.hpp"
+#include "util.hpp"
 
 // Loader message types
 enum LoaderMessages {
@@ -63,9 +65,6 @@ public:
 };
 
 #ifndef NDEBUG
-#define STRING(X) #X
-#define TOSTRING(X) STRING(X)
-#define FILE_LINE " @ " __FILE__ ":" TOSTRING(__LINE__)
 #define GL_CHECK(func) func; { GLenum glerr = glGetError(); if(GL_NO_ERROR != glerr) throw gl_error(FILE_LINE, glerr); }
 #define FBO_CHECK { GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER); if(GL_FRAMEBUFFER_COMPLETE != status) throw fbo_error(FILE_LINE, status); }
 #else
