@@ -38,6 +38,12 @@ public:
   };
   HANDLE(RenderTarget)
 
+  struct VertexBuffer {
+    volatile uint32_t id;
+    // vertex buffer properties here
+  };
+  HANDLE(VertexBuffer)
+
 private:
 
   struct GpuMemAvailable {
@@ -48,8 +54,10 @@ private:
   PipelinePlatform *platform;
 
   // loader stuff
-  typedef std::pair<uint32_t, void*> LoaderMsg;
-  queue<LoaderMsg> loader_queue;
+  typedef std::pair<uint32_t, hTexture> TexLoaderMsg;
+  typedef std::pair<uint32_t, hVertexBuffer> BufLoaderMsg;
+  queue<TexLoaderMsg> texloader_queue;
+  queue<BufLoaderMsg> bufloader_queue;
   boost::thread loader_thread;
   bool loader_init_complete;
   std::string loader_error_string;

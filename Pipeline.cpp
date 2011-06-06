@@ -101,23 +101,39 @@ void Pipeline::runLoaderThread() {
   }
   loader_init_complete = true;
 
-  
   for(bool done=false; !done;) {
-    LoaderMsg msg;
-    while(loader_queue.try_pop(msg)) {
-      switch(msg.first) {
+    bool loaded_objects_this_loop = false;
+    for(BufLoaderMsg bmsg; bufloader_queue.try_pop(bmsg);) {
+      if(done) break;
+      //TODO: check for various buffer load messages
+      loaded_objects_this_loop = true;
+    };
+    if(loaded_objects_this_loop) {
+      // TODO: add a thread condition to signal object loads are complete
+    }
+    TexLoaderMsg tmsg;
+    if(!done && texloader_queue.try_pop(tmsg)) {
+      switch(tmsg.first) {
         case LoaderMsgLoadTexture: {
           throw std::logic_error("Texture loading is not yet implemented!");
         }
         case LoaderMsgUnloadTexture: {
-          Texture *tex = (Texture*)msg.second;
-          glDeleteTextures(1, (GLuint*)&(tex->id));
-          delete tex;
+          glDeleteTextures(1, (GLuint*)&(tmsg.second->id));
+          break;
         }
-        case LoaderMsgShutdown:
-          done=true;
-          // we don't break here. Instead, we wait for the queue to be emptied
       }
+    } else if(!done) {
+      boost::thread::yield(); // there's nothing on the queue. Let's be a good citizen
+    }
+  }
+
+  for(BufLoaderMsg bmsg; bufloader_queue.try_pop(bmsg);) {
+    // TODO: run just buffer unload messages
+  }
+
+  for(TexLoaderMsg tmsg; texloader_queue.try_pop(tmsg);) {
+    if(tmsg.first == LoaderMsgUnloadTexture) {
+      glDeleteTextures(1, (GLuint*)&(tmsg.second->id));
     }
   }
 
@@ -126,7 +142,7 @@ void Pipeline::runLoaderThread() {
 
 void Pipeline::deleteTexture(Texture *p) {
   if(p->id != default_texture->id) { // don't accidentally trash every texture that's still loading...
-    loader_queue.push(LoaderMsg(LoaderMsgUnloadTexture, p));
+    texloader_queue.push(TexLoaderMsg(LoaderMsgUnloadTexture, p));
   }
 }
 
@@ -145,7 +161,7 @@ Pipeline::hTexture Pipeline::createTexture(std::string name) {
   tex->id = default_texture->id;
   tex->name = name;
   tex->biggest_mip_loaded=-1;
-  loader_queue.push(LoaderMsg(LoaderMsgLoadTexture, new hTexture(tex)));
+  texloader_queue.push(TexLoaderMsg(LoaderMsgLoadTexture, tex));
   return tex;
 }
 
@@ -234,7 +250,7 @@ Pipeline::~Pipeline() {
   default_framebuffer = hRenderTarget();
   current_framebuffer = hRenderTarget();
   default_texture = hTexture();
-  loader_queue.push(LoaderMsg(LoaderMsgShutdown, const_cast<char*>("")));
+  texloader_queue.push(TexLoaderMsg(LoaderMsgShutdown, hTexture()));
   loader_thread.join();
   platformFinish();
 }
@@ -286,10 +302,10 @@ void Pipeline::beginFrame() {
 void Pipeline::render() {
   GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, gbuffer_framebuffer->id))
   GL_CHECK(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT))
-  // loop through objects and fill the gbuffer
+  // TODO: loop through objects and fill the gbuffer
   GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, current_framebuffer->id)) // our current render target
   GL_CHECK(glClear(GL_COLOR_BUFFER_BIT))
-  // loop through lights and fill the framebuffer
+  // TODO: loop through lights and fill the framebuffer
   GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, 0))
   if(current_framebuffer->build_mips) {
     for(auto i = current_framebuffer->bound_textures.begin(); i != current_framebuffer->bound_textures.end(); ++i) {
