@@ -5,11 +5,14 @@
 #include <memory>
 #include <set>
 #include <vector>
+#include "util/util.hpp"
 
-//#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-variable"
+
+GCC_DIAGNOSTIC_PUSH
+GCC_DISABLE_WARNING("-Wunused-variable")
 #include <boost/thread.hpp>
-//#pragma GCC diagnostic pop
+GCC_DIAGNOSTIC_POP
+
 #include "util/queue.hpp"
 
 #define HANDLE(type) typedef std::shared_ptr<type> h##type;
