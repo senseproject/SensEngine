@@ -16,36 +16,26 @@
 
 struct PipelinePlatform;
 
+class Drawbuffer;
+class Material;
+class RenderTarget;
+class Texture;
+
 class Pipeline {
 public:
+  HANDLE(Material)
+  HANDLE(Drawbuffer)
+  HANDLE(RenderTarget)
+
   struct KbdCallback {
     enum Keysym {
     };
     virtual void operator()(Keysym, uint32_t) =0;
   };
-
-  struct Texture {
-    volatile uint32_t id;
-    volatile int biggest_mip_loaded;
-    std::string name;
-    // Other special properties about this texture
-  };
-  HANDLE(Texture)
-
-  struct RenderTarget {
-    volatile uint32_t id;
-    bool build_mips;
-    std::vector<hTexture> bound_textures;
-  };
-  HANDLE(RenderTarget)
-
-  struct VertexBuffer {
-    volatile uint32_t id;
-    // vertex buffer properties here
-  };
-  HANDLE(VertexBuffer)
+      
 
 private:
+  HANDLE(Texture)
 
   struct GpuMemAvailable {
     int texture;
@@ -56,7 +46,7 @@ private:
 
   // loader stuff
   typedef std::pair<uint32_t, hTexture> TexLoaderMsg;
-  typedef std::pair<uint32_t, hVertexBuffer> BufLoaderMsg;
+  typedef std::pair<uint32_t, hDrawbuffer> BufLoaderMsg;
   queue<TexLoaderMsg> texloader_queue;
   queue<BufLoaderMsg> bufloader_queue;
   boost::thread loader_thread;

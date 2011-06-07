@@ -28,6 +28,6 @@ FIND_PACKAGE(Boost COMPONENTS system thread REQUIRED)
 ADD_DEFINITIONS(-DGLEW_STATIC)
 INCLUDE_DIRECTORIES("3rdparty/glew")
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
-add_executable(renderer_demo main.cpp Pipeline.cpp Pipeline_${PLATFORM}.cpp ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/glew/glew.c)
+add_executable(renderer_demo main.cpp Pipeline.cpp Pipeline_${PLATFORM}.cpp ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/glew/glew.c Drawbuffer.cpp Material.cpp Texture.cpp RenderTarget.cpp)
 
 TARGET_LINK_LIBRARIES(renderer_demo ${OPENGL_gl_LIBRARY} ${PLATFORM_LIBRARIES} ${Boost_LIBRARIES})

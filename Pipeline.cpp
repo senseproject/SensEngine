@@ -7,6 +7,8 @@
 #include <cstdio>
 
 #include "Pipeline.hpp"
+#include "RenderTarget.hpp"
+#include "Texture.hpp"
 #include "util.hpp"
 
 // Loader message types
@@ -73,19 +75,19 @@ public:
 struct TextureDealloc {
   Pipeline *pipe;
   TextureDealloc(Pipeline *pipe) : pipe(pipe) {}
-  void operator()(Pipeline::Texture *p) { pipe->deleteTexture(p); }  
+  void operator()(Texture *p) { pipe->deleteTexture(p); }  
 };
 
 struct TargetTextureDealloc {
   Pipeline *pipe;
   TargetTextureDealloc(Pipeline *pipe) : pipe(pipe) {}
-  void operator()(Pipeline::Texture *p) { pipe->deleteTargetTexture(p); }
+  void operator()(Texture *p) { pipe->deleteTargetTexture(p); }
 };
 
 struct RenderTargetDealloc {
   Pipeline *pipe;
   RenderTargetDealloc(Pipeline *pipe) : pipe(pipe) {}
-  void operator()(Pipeline::RenderTarget *p) { pipe->deleteRenderTarget(p); }
+  void operator()(RenderTarget *p) { pipe->deleteRenderTarget(p); }
 };
 
 void Pipeline::runLoaderThread() {
@@ -113,7 +115,7 @@ void Pipeline::runLoaderThread() {
           throw std::logic_error("Texture loading is not yet implemented!");
         }
         case LoaderMsgUnloadTexture: {
-          glDeleteTextures(1, (GLuint*)&(tmsg.second->id));
+          // Automagically deleted when tmsg goes out of scope
           break;
         }
       }
@@ -126,34 +128,25 @@ void Pipeline::runLoaderThread() {
     // TODO: run just buffer unload messages
   }
 
-  for(TexLoaderMsg tmsg; texloader_queue.try_pop(tmsg);) {
-    if(tmsg.first == LoaderMsgUnloadTexture) {
-      glDeleteTextures(1, (GLuint*)&(tmsg.second->id));
-    }
-  }
+  for(TexLoaderMsg tmsg; texloader_queue.try_pop(tmsg);) ; // delete messages will work like magic here because of the shared_ptr
 
   platformFinishLoader();
 }
 
 void Pipeline::deleteTexture(Texture *p) {
-  if(p->id != default_texture->id) { // don't accidentally trash every texture that's still loading...
-    texloader_queue.push(TexLoaderMsg(LoaderMsgUnloadTexture, hTexture(p)));
-  }
+  texloader_queue.push(TexLoaderMsg(LoaderMsgUnloadTexture, hTexture(p)));
 }
 
-void Pipeline::deleteTargetTexture(Pipeline::Texture* p) {
-  glDeleteTextures(1, (GLuint*)&(p->id));
+void Pipeline::deleteTargetTexture(Texture* p) {
   delete p;
 }
 
-void Pipeline::deleteRenderTarget(Pipeline::RenderTarget* p) {
-  glDeleteFramebuffers(1, (GLuint*)&(p->id));
+void Pipeline::deleteRenderTarget(RenderTarget* p) {
   delete p;
 }
 
 Pipeline::hTexture Pipeline::createTexture(std::string name) {
-  hTexture tex = hTexture(new Texture);
-  tex->id = default_texture->id;
+  hTexture tex = hTexture(new Texture, TextureDealloc(this));
   tex->name = name;
   tex->biggest_mip_loaded=-1;
   texloader_queue.push(TexLoaderMsg(LoaderMsgLoadTexture, tex));
@@ -162,17 +155,11 @@ Pipeline::hTexture Pipeline::createTexture(std::string name) {
 
 Pipeline::hTexture Pipeline::createTargetTexture() {
   hTexture tex(new Texture, TargetTextureDealloc(this));
-  GLuint texid;
-  glGenTextures(1, &texid);
-  tex->id = texid;
   return tex;
 }
 
 Pipeline::hRenderTarget Pipeline::createRenderTarget() {
   hRenderTarget target(new RenderTarget, RenderTargetDealloc(this));
-  GLuint id;
-  glGenFramebuffers(1, &id);
-  target->id = id;
   target->build_mips = true; // default to building mipmaps
   return target;
 }
@@ -218,13 +205,13 @@ Pipeline::Pipeline() : loader_init_complete(false), loader_be_done(false), shado
 
   // Create a default texture as a placeholder when we're streaming something in
   hTexture default_texture = createTargetTexture(); // not really a render target, but this gives us a main-thread-owned texture
-  GL_CHECK(glBindTexture(GL_TEXTURE_2D, default_texture->id))
+  GL_CHECK(glBindTexture(GL_TEXTURE_2D, default_texture->gl_texid))
   GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 8, 8, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex_builtin_default))
   GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST))
   GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST))
 
   csm_tex_array = createTargetTexture();
-  GL_CHECK(glBindTexture(GL_TEXTURE_2D_ARRAY, csm_tex_array->id))
+  GL_CHECK(glBindTexture(GL_TEXTURE_2D_ARRAY, csm_tex_array->gl_texid))
   GL_CHECK(glTexParameteri(GL_TEXTURE_2D_ARRAY,GL_TEXTURE_MIN_FILTER,GL_LINEAR))
   GL_CHECK(glTexParameteri(GL_TEXTURE_2D_ARRAY,GL_TEXTURE_MAG_FILTER,GL_LINEAR))
   GL_CHECK(glTexParameteri(GL_TEXTURE_2D_ARRAY,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE))
@@ -232,7 +219,7 @@ Pipeline::Pipeline() : loader_init_complete(false), loader_be_done(false), shado
   GL_CHECK(glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_R32F, shadowmap_resolution, shadowmap_resolution, num_csm_splits+1, 0, GL_RED, GL_FLOAT, 0))
 
   shadowmap = createTargetTexture();
-  GL_CHECK(glBindTexture(GL_TEXTURE_2D, shadowmap->id))
+  GL_CHECK(glBindTexture(GL_TEXTURE_2D, shadowmap->gl_texid))
   GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR))
   GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR))
   GL_CHECK(glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE))
@@ -260,13 +247,13 @@ void Pipeline::setupRenderTargets() {
   hTexture depth = createTargetTexture();
   default_framebuffer->bound_textures.push_back(depth);
   default_framebuffer->bound_textures.push_back(main_plane);
-  GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, default_framebuffer->id))
-  GL_CHECK(glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, main_plane->id))
+  GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, default_framebuffer->gl_fboid))
+  GL_CHECK(glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, main_plane->gl_texid))
   GL_CHECK(glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, cur_fsaa, GL_RGBA16F, width, height, GL_FALSE))
-  GL_CHECK(glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, depth->id))
+  GL_CHECK(glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, depth->gl_texid))
   GL_CHECK(glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, cur_fsaa, GL_DEPTH24_STENCIL8, width, height, GL_FALSE))
-  GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, main_plane->id, 0))
-  GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D_MULTISAMPLE, depth->id, 0))
+  GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, main_plane->gl_texid, 0))
+  GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D_MULTISAMPLE, depth->gl_texid, 0))
   GL_CHECK(glViewport(0, 0, width, height))
   FBO_CHECK
 
@@ -275,14 +262,14 @@ void Pipeline::setupRenderTargets() {
   gbuffer_framebuffer->bound_textures.push_back(depth);
   gbuffer_framebuffer->bound_textures.push_back(rgbm);
   gbuffer_framebuffer->bound_textures.push_back(nor);
-  GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, gbuffer_framebuffer->id))
-  GL_CHECK(glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, rgbm->id))
+  GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, gbuffer_framebuffer->gl_fboid))
+  GL_CHECK(glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, rgbm->gl_texid))
   GL_CHECK(glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, cur_fsaa, GL_RGBA8, width, height, GL_FALSE))
-  GL_CHECK(glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, nor->id))
+  GL_CHECK(glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, nor->gl_texid))
   GL_CHECK(glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, cur_fsaa, GL_RG16F, width, height, GL_FALSE))
-  GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D_MULTISAMPLE, depth->id, 0))
-  GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, rgbm->id, 0))
-  GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D_MULTISAMPLE, nor->id, 0))
+  GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D_MULTISAMPLE, depth->gl_texid, 0))
+  GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, rgbm->gl_texid, 0))
+  GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D_MULTISAMPLE, nor->gl_texid, 0))
   GL_CHECK(glViewport(0, 0, width, height))
   FBO_CHECK
 }
@@ -295,23 +282,23 @@ void Pipeline::beginFrame() {
 }
 
 void Pipeline::render() {
-  GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, gbuffer_framebuffer->id))
+  GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, gbuffer_framebuffer->gl_fboid))
   GL_CHECK(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT))
   // TODO: loop through objects and fill the gbuffer
-  GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, current_framebuffer->id)) // our current render target
+  GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, current_framebuffer->gl_fboid)) // our current render target
   GL_CHECK(glClear(GL_COLOR_BUFFER_BIT))
   // TODO: loop through lights and fill the framebuffer
   GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, 0))
   if(current_framebuffer->build_mips) {
     for(auto i = current_framebuffer->bound_textures.begin(); i != current_framebuffer->bound_textures.end(); ++i) {
-      GL_CHECK(glBindTexture(GL_TEXTURE_2D, (*i)->id))
+      GL_CHECK(glBindTexture(GL_TEXTURE_2D, (*i)->gl_texid))
       GL_CHECK(glGenerateMipmap(GL_TEXTURE_2D))
     }
   }
 }
 
 void Pipeline::endFrame() {
-  GL_CHECK(glBindFramebuffer(GL_READ_FRAMEBUFFER, default_framebuffer->id))
+  GL_CHECK(glBindFramebuffer(GL_READ_FRAMEBUFFER, default_framebuffer->gl_fboid))
   // TODO: convert this blit into a tonemapping operation of some sort
   GL_CHECK(glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST))
   platformSwap();
@@ -327,7 +314,7 @@ Pipeline::hRenderTarget Pipeline::buildRenderTarget(int w, int h, bool mip) {
   hRenderTarget rt = createRenderTarget();
   hTexture tex = createTargetTexture();
   rt->bound_textures.push_back(tex);
-  GL_CHECK(glBindTexture(GL_TEXTURE_2D, tex->id))
+  GL_CHECK(glBindTexture(GL_TEXTURE_2D, tex->gl_texid))
   GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, w, h, 0, GL_RGBA, GL_FLOAT, 0))
   GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR))
   if(mip) {
@@ -335,8 +322,8 @@ Pipeline::hRenderTarget Pipeline::buildRenderTarget(int w, int h, bool mip) {
   } else {
     GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR))
   }
-  GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, rt->id))
-  GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex->id, 0))
+  GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, rt->gl_fboid))
+  GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex->gl_texid, 0))
   FBO_CHECK
   return rt;
 }
