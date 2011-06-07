@@ -1,5 +1,5 @@
-#ifndef QNT_CORE_UTIL_QUEUE_HPP
-#define QNT_CORE_UTIL_QUEUE_HPP
+#ifndef SENSE_UTIL_QUEUE_HPP
+#define SENSE_UTIL_QUEUE_HPP
 
 #include <deque>
 #include <boost/thread.hpp>
@@ -102,4 +102,4 @@ class queue : public locklessQueue<T> {};
 #endif
 
 
-#endif // QNT_CORE_UTIL_QUEUE_HPP
+#endif // SENSE_UTIL_QUEUE_HPP

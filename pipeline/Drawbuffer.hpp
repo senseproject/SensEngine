@@ -1,5 +1,5 @@
-#ifndef QNT_RENDERER_DRAWBUFFER_H
-#define QNT_RENDERER_DRAWBUFFER_H
+#ifndef SENSE_PIPELINE_DRAWBUFFER_HPP
+#define SENSE_PIPELINE_DRAWBUFFER_HPP
 
 #include <memory>
 
@@ -50,8 +50,15 @@ private:
 protected:
   DrawBuffer();
 
+#ifndef _MSC_VER
   DrawBuffer(const DrawBuffer&)=delete;
   DrawBuffer& operator=(const DrawBuffer&)=delete;
+#else
+  // visual studio 2010 still doesn't support =delete, so just leave them unimplemented
+  // for the linker to throw an error on instead of the compiler
+  DrawBuffer(const DrawBuffer&);
+  DrawBuffer& operator=(const DrawBuffer&);
+#endif
 
   friend class Pipeline;
 };
@@ -70,8 +77,15 @@ class IndexedDrawBuffer: public DrawBuffer {
   // OpenGL-specific variables
   unsigned int ibo_id;
 
-  IndexedDrawBuffer(const DrawBuffer&)=delete;
+#ifndef _MSC_VER
+  IndexedDrawBuffer(const IndexedDrawBuffer&)=delete;
   IndexedDrawBuffer& operator=(const IndexedDrawBuffer&)=delete;
+#else
+  // visual studio 2010 still doesn't support =delete, so just leave them unimplemented
+  // for the linker to throw an error on instead of the compiler
+  IndexedDrawBuffer(const IndexedDrawBuffer&);
+  IndexedDrawBuffer& operator=(const IndexedDrawBuffer&);
+#endif
 };
 
-#endif
+#endif // SENSE_PIPELINE_DRAWBUFFER_HPP

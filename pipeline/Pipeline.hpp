@@ -1,5 +1,5 @@
-#ifndef Pipeline_hpp
-#define Pipeline_hpp
+#ifndef SENSE_PIPELINE_PIPELINE_HPP
+#define SENSE_PIPELINE_PIPELINE_HPP
 
 #include <cstdint>
 #include <memory>
@@ -128,4 +128,4 @@ public:
 #endif
 };
 
-#endif // Pipeline_hpp
+#endif // SENSE_PIPELINE_PIPELINE_HPP

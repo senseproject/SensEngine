@@ -1,5 +1,5 @@
-#ifndef QNT_RENDERER_RENDERTARGET_HPP
-#define QNT_RENDERER_RENDERTARGET_HPP
+#ifndef SENSE_PIPELINE_RENDERTARGET_HPP
+#define SENSE_PIPELINE_RENDERTARGET_HPP
 
 #include <vector>
 #include <memory>
@@ -18,8 +18,15 @@ private:
 
   friend class Pipeline;
 
+#ifndef _MSC_VER
   RenderTarget(const RenderTarget&)=delete;
   RenderTarget& operator=(const RenderTarget&)=delete;
+#else
+  // visual studio 2010 still doesn't support =delete, so just leave them unimplemented
+  // for the linker to throw an error on instead of the compiler
+  RenderTarget(const RenderTarget&);
+  RenderTarget& operator=(const RenderTarget&);
+#endif
 };
 
-#endif // QNT_RENDERER_RENDERTARGET_HPP
+#endif // SENSE_PIPELINE_RENDERTARGET_HPP

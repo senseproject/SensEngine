@@ -1,5 +1,5 @@
-#ifndef QNT_CORE_UTIL_ATOMIC_HPP
-#define QNT_CORE_UTIL_ATOMIC_HPP
+#ifndef SENSE_UTIL_ATOMIC_HPP
+#define SENSE_UTIL_ATOMIC_HPP
 
 #if defined(__GNUC__)
   #define fetchAndIncrementP(var) __sync_fetch_and_add(var, 1)
@@ -25,4 +25,4 @@
 #define compareAndSwap(var, old_val, new_val) compareAndSwapP(&(var), old_val, new_val)
 #define compareAndSwapPointer(var, old_val, new_val) compareAndSwapPointerP(&(var), old_val, new_val)
 
-#endif // QNT_CORE_UTIL_ATOMIC_HPP
+#endif // SENSE_UTIL_ATOMIC_HPP

@@ -1,5 +1,5 @@
-#ifndef QNT_RENDERER_DEFINITIONTYPES_H
-#define QNT_RENDERER_DEFINITIONTYPES_H
+#ifndef SENSE_PIPELIN_DEFINITIONTYPES_HPP
+#define SENSE_PIPELIN_DEFINITIONTYPES_HPP
 
 #include <memory>
 #include <string>
@@ -52,4 +52,4 @@ private:
   MaterialDef& operator=(const MaterialDef&);
 };
 
-#endif
+#endif // SENSE_PIPELIN_DEFINITIONTYPES_HPP
