@@ -66,7 +66,7 @@ private:
   std::shared_ptr<ShaderProgram> prog;
 
 #ifndef _MSC_VER
-  Material() {}=default;
+  Material() =default;
   Material(const Material&)=delete;
   Material& operator=(const Material&)=delete;
 #else

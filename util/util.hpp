@@ -9,14 +9,15 @@
 #define FILE_LINE " @ " __FILE__ ":" STRINGIFICATE(__LINE__)
 
 #ifdef __GNUC__
+#define GCC_DO_PRAGMA(prag) _Pragma(#prag)
 #if __GNUC_MINOR__ >= 5
-#define GCC_DIAGNOSTIC_PUSH  _Pragma(GCC diagnostic push)
-#define GCC_DIAGNOSTIC_POP   _Pragma(GCC diagnostic pop)
+#define GCC_DIAGNOSTIC_PUSH  GCC_DO_PRAGMA(GCC diagnostic push)
+#define GCC_DIAGNOSTIC_POP   GCC_DO_PRAGMA(GCC diagnostic pop)
 #else
 #define GCC_DIAGNOSTIC_PUSH
 #define GCC_DIAGNOSTIC_POP
 #endif
-#define GCC_DISABLE_WARNING(warn) _Pragma(GCC diagnostic ignored warn)
+#define GCC_DISABLE_WARNING(warn) GCC_DO_PRAGMA(GCC diagnostic ignored warn)
 #define MSC_DIAGNOSTIC_PUSH
 #define MSC_DIAGNOSTIC_POP
 #define MSC_DISABLE_WARNING(warn)
