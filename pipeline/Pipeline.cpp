@@ -72,12 +72,6 @@ public:
 #define FBO_CHECK
 #endif
 
-struct TextureDealloc {
-  Pipeline *pipe;
-  TextureDealloc(Pipeline *pipe) : pipe(pipe) {}
-  void operator()(Texture *p) { pipe->deleteTexture(p); }  
-};
-
 struct TargetTextureDealloc {
   Pipeline *pipe;
   TargetTextureDealloc(Pipeline *pipe) : pipe(pipe) {}
@@ -99,42 +93,12 @@ void Pipeline::runLoaderThread() {
   loader_init_complete = true;
 
   while(!loader_be_done) {
-    bool loaded_objects_this_loop = false;
-    for(BufLoaderMsg bmsg; bufloader_queue.try_pop(bmsg);) {
-      if(loader_be_done) break;
-      //TODO: check for various buffer load messages
-      loaded_objects_this_loop = true;
-    };
-    if(loaded_objects_this_loop) {
-      // TODO: add a thread condition to signal object loads are complete
-    }
-    TexLoaderMsg tmsg;
-    if(!loader_be_done && texloader_queue.try_pop(tmsg)) {
-      switch(tmsg.first) {
-        case LoaderMsgLoadTexture: {
-          throw std::logic_error("Texture loading is not yet implemented!");
-        }
-        case LoaderMsgUnloadTexture: {
-          // Automagically deleted when tmsg goes out of scope
-          break;
-        }
-      }
-    } else if(!loader_be_done) {
-      boost::thread::yield(); // there's nothing on the queue. Let's be a good citizen
-    }
+    loader().run();
   }
 
-  for(BufLoaderMsg bmsg; bufloader_queue.try_pop(bmsg);) {
-    // TODO: run just buffer unload messages
-  }
-
-  for(TexLoaderMsg tmsg; texloader_queue.try_pop(tmsg);) ; // delete messages will work like magic here because of the shared_ptr
+  loader().cleanup();
 
   platformFinishLoader();
-}
-
-void Pipeline::deleteTexture(Texture *p) {
-  texloader_queue.push(TexLoaderMsg(LoaderMsgUnloadTexture, hTexture(p)));
 }
 
 void Pipeline::deleteTargetTexture(Texture* p) {
@@ -143,14 +107,6 @@ void Pipeline::deleteTargetTexture(Texture* p) {
 
 void Pipeline::deleteRenderTarget(RenderTarget* p) {
   delete p;
-}
-
-Pipeline::hTexture Pipeline::createTexture(std::string name) {
-  hTexture tex = hTexture(new Texture, TextureDealloc(this));
-  tex->name = name;
-  tex->biggest_mip_loaded=-1;
-  texloader_queue.push(TexLoaderMsg(LoaderMsgLoadTexture, tex));
-  return tex;
 }
 
 Pipeline::hTexture Pipeline::createTargetTexture() {

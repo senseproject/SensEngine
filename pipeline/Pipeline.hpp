@@ -6,6 +6,7 @@
 #include <set>
 #include <vector>
 #include "util/util.hpp"
+#include "Loader.hpp"
 
 
 GCC_DIAGNOSTIC_PUSH
@@ -48,10 +49,7 @@ private:
   PipelinePlatform *platform;
 
   // loader stuff
-  typedef std::pair<uint32_t, hTexture> TexLoaderMsg;
-  typedef std::pair<uint32_t, hDrawbuffer> BufLoaderMsg;
-  queue<TexLoaderMsg> texloader_queue;
-  queue<BufLoaderMsg> bufloader_queue;
+  Loader l;
   boost::thread loader_thread;
   volatile bool loader_init_complete;
   volatile bool loader_be_done;
@@ -94,11 +92,9 @@ private:
 protected:
   void runLoaderThread();
 
-  void deleteTexture(Texture*);
   void deleteTargetTexture(Texture*);
   void deleteRenderTarget(RenderTarget*);
 
-  hTexture createTexture(std::string);
   hTexture createTargetTexture();
   hRenderTarget createRenderTarget();
 
@@ -117,12 +113,12 @@ public:
   void setRenderTarget(hRenderTarget);
   hRenderTarget buildRenderTarget(int w, int h, bool mip=true);
 
+  Loader& loader() { return l; }
+
   // functions to set rendering options (FSAA, ANISO, &c)
   const std::set<int>& fsaaLevels() const { return fsaa_levels; }
   void setFsaa(int i) { if(fsaa_levels.find(i) != fsaa_levels.end()) { cur_fsaa = i; setupRenderTargets(); }}
 
-  // These are all used as callbacks
-  friend struct TextureDealloc;
   friend struct TargetTextureDealloc;
   friend struct RenderTargetDealloc;
 

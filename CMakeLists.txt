@@ -34,6 +34,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 SET(pipeline_srcs
   pipeline/Drawbuffer.cpp
+  pipeline/Loader.cpp
   pipeline/Material.cpp
   pipeline/Pipeline.cpp
   pipeline/Pipeline_${PLATFORM}.cpp
@@ -45,6 +46,7 @@ SET(pipeline_srcs
 SET(pipeline_hdrs
   pipeline/DefinitionTypes.hpp
   pipeline/Drawbuffer.hpp
+  pipeline/Loader.hpp
   pipeline/Material.hpp
   pipeline/Pipeline.hpp
   pipeline/RenderTarget.hpp
