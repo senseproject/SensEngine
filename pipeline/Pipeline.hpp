@@ -10,7 +10,7 @@
 #pragma GCC diagnostic ignored "-Wunused-variable"
 #include <boost/thread.hpp>
 //#pragma GCC diagnostic pop
-#include "queue.hpp"
+#include "util/queue.hpp"
 
 #define HANDLE(type) typedef std::shared_ptr<type> h##type;
 

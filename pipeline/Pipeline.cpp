@@ -9,7 +9,7 @@
 #include "Pipeline.hpp"
 #include "RenderTarget.hpp"
 #include "Texture.hpp"
-#include "util.hpp"
+#include "util/util.hpp"
 
 // Loader message types
 enum LoaderMessages {

@@ -1,4 +1,5 @@
-project(renderer)
+PROJECT(SenseEngine)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
 IF(CMAKE_COMPILER_IS_GNUCXX)
     IF(CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -28,6 +29,34 @@ FIND_PACKAGE(Boost COMPONENTS system thread REQUIRED)
 ADD_DEFINITIONS(-DGLEW_STATIC)
 INCLUDE_DIRECTORIES("3rdparty/glew")
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
-add_executable(renderer_demo main.cpp Pipeline.cpp Pipeline_${PLATFORM}.cpp ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/glew/glew.c Drawbuffer.cpp Material.cpp Texture.cpp RenderTarget.cpp)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+
+SET(pipeline_srcs
+  pipeline/Drawbuffer.cpp
+  pipeline/Material.cpp
+  pipeline/Pipeline.cpp
+  pipeline/Pipeline_${PLATFORM}.cpp
+  pipeline/RenderTarget.cpp
+  pipeline/Texture.cpp
+  3rdparty/glew/glew.c
+)
+
+SET(pipeline_hdrs
+  pipeline/DefinitionTypes.hpp
+  pipeline/Drawbuffer.hpp
+  pipeline/Material.hpp
+  pipeline/Pipeline.hpp
+  pipeline/RenderTarget.hpp
+  pipeline/Texture.hpp
+  3rdparty/glew/GL/glew.h
+)
+
+SET(util_hdrs
+  util/atomic.hpp
+  util/queue.hpp
+  util/util.hpp
+)
+
+ADD_EXECUTABLE(renderer_demo main.cpp ${pipeline_srcs} ${pipeline_hdrs} ${util_hdrs})
 
 TARGET_LINK_LIBRARIES(renderer_demo ${OPENGL_gl_LIBRARY} ${PLATFORM_LIBRARIES} ${Boost_LIBRARIES})

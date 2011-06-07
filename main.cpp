@@ -1,4 +1,4 @@
-#include "Pipeline.hpp"
+#include "pipeline/Pipeline.hpp"
 
 struct DemoConsole : public Pipeline::KbdCallback {
   virtual ~DemoConsole() {}
