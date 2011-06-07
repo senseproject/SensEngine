@@ -92,9 +92,6 @@ private:
 protected:
   void runLoaderThread();
 
-  void deleteTargetTexture(Texture*);
-  void deleteRenderTarget(RenderTarget*);
-
   hTexture createTargetTexture();
   hRenderTarget createRenderTarget();
 
@@ -118,9 +115,6 @@ public:
   // functions to set rendering options (FSAA, ANISO, &c)
   const std::set<int>& fsaaLevels() const { return fsaa_levels; }
   void setFsaa(int i) { if(fsaa_levels.find(i) != fsaa_levels.end()) { cur_fsaa = i; setupRenderTargets(); }}
-
-  friend struct TargetTextureDealloc;
-  friend struct RenderTargetDealloc;
 
 #ifdef WIN32
   friend LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);

@@ -72,18 +72,6 @@ public:
 #define FBO_CHECK
 #endif
 
-struct TargetTextureDealloc {
-  Pipeline *pipe;
-  TargetTextureDealloc(Pipeline *pipe) : pipe(pipe) {}
-  void operator()(Texture *p) { pipe->deleteTargetTexture(p); }
-};
-
-struct RenderTargetDealloc {
-  Pipeline *pipe;
-  RenderTargetDealloc(Pipeline *pipe) : pipe(pipe) {}
-  void operator()(RenderTarget *p) { pipe->deleteRenderTarget(p); }
-};
-
 void Pipeline::runLoaderThread() {
   try {
   platformInitLoader();
@@ -101,21 +89,13 @@ void Pipeline::runLoaderThread() {
   platformFinishLoader();
 }
 
-void Pipeline::deleteTargetTexture(Texture* p) {
-  delete p;
-}
-
-void Pipeline::deleteRenderTarget(RenderTarget* p) {
-  delete p;
-}
-
 Pipeline::hTexture Pipeline::createTargetTexture() {
-  hTexture tex(new Texture, TargetTextureDealloc(this));
+  hTexture tex(new Texture);
   return tex;
 }
 
 Pipeline::hRenderTarget Pipeline::createRenderTarget() {
-  hRenderTarget target(new RenderTarget, RenderTargetDealloc(this));
+  hRenderTarget target(new RenderTarget);
   target->build_mips = true; // default to building mipmaps
   return target;
 }
