@@ -56,7 +56,6 @@ private:
   std::string loader_error_string;
 
   // global OpenGL resources
-  hTexture default_texture;
   hTexture csm_tex_array;
   hTexture shadowmap;
   hRenderTarget default_framebuffer;

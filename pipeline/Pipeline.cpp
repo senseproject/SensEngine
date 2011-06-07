@@ -9,68 +9,7 @@
 #include "Pipeline.hpp"
 #include "RenderTarget.hpp"
 #include "Texture.hpp"
-#include "util/util.hpp"
-
-// Loader message types
-enum LoaderMessages {
-  LoaderMsgLoadTexture,
-  LoaderMsgUnloadTexture,
-};
-
-// Builtin texture data
-unsigned int tex_builtin_default[] =
-{
-  0x00555555, 0x00555555, 0x00555555, 0x00555555, 0x00AAAAAA, 0x00AAAAAA, 0x00AAAAAA, 0x00AAAAAA,
-  0x00555555, 0x00555555, 0x00555555, 0x00555555, 0x00AAAAAA, 0x00AAAAAA, 0x00AAAAAA, 0x00AAAAAA,
-  0x00555555, 0x00555555, 0x00555555, 0x00555555, 0x00AAAAAA, 0x00AAAAAA, 0x00AAAAAA, 0x00AAAAAA,
-  0x00555555, 0x00555555, 0x00555555, 0x00555555, 0x00AAAAAA, 0x00AAAAAA, 0x00AAAAAA, 0x00AAAAAA,
-  0x00AAAAAA, 0x00AAAAAA, 0x00AAAAAA, 0x00AAAAAA, 0x00555555, 0x00555555, 0x00555555, 0x00555555,
-  0x00AAAAAA, 0x00AAAAAA, 0x00AAAAAA, 0x00AAAAAA, 0x00555555, 0x00555555, 0x00555555, 0x00555555,
-  0x00AAAAAA, 0x00AAAAAA, 0x00AAAAAA, 0x00AAAAAA, 0x00555555, 0x00555555, 0x00555555, 0x00555555,
-  0x00AAAAAA, 0x00AAAAAA, 0x00AAAAAA, 0x00AAAAAA, 0x00555555, 0x00555555, 0x00555555, 0x00555555,
-};
-
-static const char* glErrorString(GLenum err) {
-  switch(err) {
-    case GL_INVALID_ENUM: return "Invalid Enum";
-    case GL_INVALID_VALUE: return "Invalid Value";
-    case GL_INVALID_OPERATION: return "Invalid Operation";
-    case GL_STACK_OVERFLOW: return "Stack Overflow";
-    case GL_STACK_UNDERFLOW: return "Stack Underflow";
-    case GL_OUT_OF_MEMORY: return "Out of Memory";
-    case GL_TABLE_TOO_LARGE: return "Table too Large";
-    default: return "Unknown Error";
-  }
-}
-
-static const char* fboErrorString(GLenum status) {
-  switch(status) {
-    case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT: return "Incomplete Attachment";
-    case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT: return "Missing Attachment";
-    case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER: return "Incomplete Draw Buffer";
-    case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER: return "Incomplete Read Buffer";
-    case GL_FRAMEBUFFER_UNSUPPORTED: return "Unsupposed Configuration";
-    default: return "Unknown Error";
-  }
-}
-
-class gl_error : public std::runtime_error {
-public:
-  gl_error(std::string location, GLenum err) : std::runtime_error(glErrorString(err)+location) {}
-};
-
-class fbo_error : public std::runtime_error {
-public:
-  fbo_error(std::string location, GLenum status) : std::runtime_error(fboErrorString(status)+location) {}
-};
-
-#ifndef NDEBUG
-#define GL_CHECK(func) func; { GLenum glerr = glGetError(); if(GL_NO_ERROR != glerr) throw gl_error(FILE_LINE, glerr); }
-#define FBO_CHECK { GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER); if(GL_FRAMEBUFFER_COMPLETE != status) throw fbo_error(FILE_LINE, status); }
-#else
-#define GL_CHECK(func) func;
-#define FBO_CHECK
-#endif
+#include "glexcept.hpp"
 
 void Pipeline::runLoaderThread() {
   try {
@@ -79,6 +18,8 @@ void Pipeline::runLoaderThread() {
     loader_error_string = e.what();
   }
   loader_init_complete = true;
+
+  loader().init();
 
   while(!loader_be_done) {
     loader().run();
@@ -139,13 +80,6 @@ Pipeline::Pipeline() : loader_init_complete(false), loader_be_done(false), shado
   setupRenderTargets();
   setRenderTarget(default_framebuffer);
 
-  // Create a default texture as a placeholder when we're streaming something in
-  hTexture default_texture = createTargetTexture(); // not really a render target, but this gives us a main-thread-owned texture
-  GL_CHECK(glBindTexture(GL_TEXTURE_2D, default_texture->gl_texid))
-  GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 8, 8, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex_builtin_default))
-  GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST))
-  GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST))
-
   csm_tex_array = createTargetTexture();
   GL_CHECK(glBindTexture(GL_TEXTURE_2D_ARRAY, csm_tex_array->gl_texid))
   GL_CHECK(glTexParameteri(GL_TEXTURE_2D_ARRAY,GL_TEXTURE_MIN_FILTER,GL_LINEAR))
@@ -167,7 +101,8 @@ Pipeline::~Pipeline() {
   gbuffer_framebuffer = hRenderTarget();
   default_framebuffer = hRenderTarget();
   current_framebuffer = hRenderTarget();
-  default_texture = hTexture();
+  csm_tex_array = hTexture();
+  shadowmap = hTexture();
   loader_be_done = true;
   loader_thread.join();
   platformFinish();

@@ -11,11 +11,12 @@ struct Texture;
 
 class Uniform {
   UniformDef::Type type;
-  std::shared_ptr<Texture> texture;
-  unsigned int gl_id;
+  boost::any value;
+  int gl_id;
 
   friend class Pipeline;
   friend class Material;
+  friend class Loader;
 };
 
 struct GlShader {
@@ -34,10 +35,13 @@ private:
 
   friend class Pipeline;
   friend class ShaderProgram;
+  friend class Loader;
 };
 
 class ShaderProgram {
+public:
   ~ShaderProgram(); // ShaderProgram cleans itself up when its destroyed
+private:
 
   unsigned int gl_id;
   std::shared_ptr<GlShader> vert;
@@ -48,6 +52,7 @@ class ShaderProgram {
 
   friend class Pipeline;
   friend class Material;
+  friend class Loader;
 
 #ifndef _MSC_VER
   ShaderProgram(const ShaderProgram&)=delete;
@@ -63,7 +68,7 @@ class ShaderProgram {
 class Material {
 private:
   std::vector<Uniform> uniforms;
-  std::shared_ptr<ShaderProgram> prog;
+  std::shared_ptr<ShaderProgram> program;
 
 #ifndef _MSC_VER
   Material() =default;
@@ -78,6 +83,7 @@ private:
 #endif
 
   friend class Pipeline;
+  friend class Loader;
 };
 
 #endif // SENSE_PIPELINE_MATERIAL_HPP

@@ -1,26 +1,38 @@
-#ifndef SENSE_PIPELIN_DEFINITIONTYPES_HPP
-#define SENSE_PIPELIN_DEFINITIONTYPES_HPP
+#ifndef SENSE_PIPELINE_DEFINITIONTYPES_HPP
+#define SENSE_PIPELINE_DEFINITIONTYPES_HPP
 
 #include <memory>
 #include <string>
 #include <unordered_map>
 
+#include <boost/any.hpp>
+#include <boost/functional/hash.hpp>
+
 struct ShaderKey {
   std::string vert;
   std::string geom;
   std::string frag;
-
-  static std::shared_ptr<ShaderKey> create() { return std::shared_ptr<ShaderKey>(new ShaderKey); }
-
-private:
-  ShaderKey() {};
-  ShaderKey(const ShaderKey&);
-  ShaderKey& operator=(const ShaderKey&);
 };
+
+inline bool operator==(const ShaderKey& lhs, const ShaderKey& rhs) {
+  return lhs.vert == rhs.vert && lhs.frag == rhs.frag && lhs.geom == rhs.geom;
+}
+
+namespace std {
+  template <>
+  struct hash<ShaderKey> : public unary_function<ShaderKey, size_t> {
+    size_t operator()(const ShaderKey& k) const {
+      size_t result = 0;
+      boost::hash_combine(result, k.vert);
+      boost::hash_combine(result, k.frag);
+      boost::hash_combine(result, k.geom);
+      return result;
+    }
+  };
+}
 
 struct UniformDef {
   enum Type {
-    SpecialTexture,
     Texture,
     ModelView,
     Projection,
@@ -34,22 +46,12 @@ struct UniformDef {
     // Other special types
     BoneMatrices,
   } type;
-  // I want so badly to make these a union, but constructors are in my way here
-  std::string texture;
-
-  static std::shared_ptr<UniformDef> create() { return std::shared_ptr<UniformDef>(new UniformDef); }
+  boost::any value;
 };
 
 struct MaterialDef {
-  std::shared_ptr<ShaderKey> shaders;
-  std::unordered_map<std::string, std::shared_ptr<UniformDef> > uniforms;
-
-  static std::shared_ptr<MaterialDef> create() { return std::shared_ptr<MaterialDef>(new MaterialDef); }
-
-private:
-  MaterialDef() { shaders = ShaderKey::create(); }
-  MaterialDef(const MaterialDef&);
-  MaterialDef& operator=(const MaterialDef&);
+  ShaderKey shaders;
+  std::unordered_map<std::string, UniformDef> uniforms;
 };
 
-#endif // SENSE_PIPELIN_DEFINITIONTYPES_HPP
+#endif // SENSE_PIPELINE_DEFINITIONTYPES_HPP
