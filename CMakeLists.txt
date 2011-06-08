@@ -1,6 +1,6 @@
-PROJECT(SenseEngine)
+PROJECT(SensEngine)
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
-
+SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${SensEngine_SOURCE_DIR}/cmake)
 IF(CMAKE_COMPILER_IS_GNUCXX)
     IF(CMAKE_SIZEOF_VOID_P EQUAL 8)
         SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=nocona")
@@ -25,14 +25,16 @@ ENDIF(WIN32)
 
 FIND_PACKAGE(OpenGL REQUIRED)
 FIND_PACKAGE(Boost COMPONENTS system thread REQUIRED)
+FIND_PACKAGE(Python 3 REQUIRED)
 
 ADD_DEFINITIONS(-DGLEW_STATIC)
 ADD_DEFINITIONS(-DBOOST_ALL_NO_LIB)
 INCLUDE_DIRECTORIES("3rdparty/glew")
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+INCLUDE_DIRECTORIES(${PYTHON_INCLUDE_DIRS})
 
-SET(pipeline_srcs
+SET(SENSE_pipeline_srcs
   pipeline/Drawbuffer.cpp
   pipeline/Loader.cpp
   pipeline/Material.cpp
@@ -43,7 +45,7 @@ SET(pipeline_srcs
   3rdparty/glew/glew.c
 )
 
-SET(pipeline_hdrs
+SET(SENSE_pipeline_hdrs
   pipeline/DefinitionTypes.hpp
   pipeline/Drawbuffer.hpp
   pipeline/Loader.hpp
@@ -54,12 +56,12 @@ SET(pipeline_hdrs
   3rdparty/glew/GL/glew.h
 )
 
-SET(util_hdrs
+SET(SENSE_util_hdrs
   util/atomic.hpp
   util/queue.hpp
   util/util.hpp
 )
 
-ADD_EXECUTABLE(renderer_demo main.cpp ${pipeline_srcs} ${pipeline_hdrs} ${util_hdrs})
+ADD_EXECUTABLE(renderer_demo main.cpp ${SENSE_pipeline_srcs} ${SENSE_pipeline_hdrs} ${SENSE_util_hdrs})
 
-TARGET_LINK_LIBRARIES(renderer_demo ${OPENGL_gl_LIBRARY} ${PLATFORM_LIBRARIES} ${Boost_LIBRARIES})
+TARGET_LINK_LIBRARIES(renderer_demo ${OPENGL_gl_LIBRARY} ${PLATFORM_LIBRARIES} ${Boost_LIBRARIES} ${PYTHON_LIBRARIES})
