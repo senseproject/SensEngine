@@ -1,4 +1,4 @@
 [Project]
-Name=renderer
+Name=SensEngine
 Manager=KDevCMakeManager
 VersionControl=kdevgit

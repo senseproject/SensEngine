@@ -52,7 +52,7 @@ static int context_attribs[] = {
   0
 };
 
-const char* window_class = "SenseEngineMainWindow";
+const char* window_class = "SensEngineMainWindow";
 
 PFNWGLCREATECONTEXTATTRIBSARBPROC CreateContextAttribs = 0;
 PFNWGLCHOOSEPIXELFORMATARBPROC ChoosePixelFormatARB = 0;
@@ -87,7 +87,7 @@ void Pipeline::platformInit() {
   window_rect.bottom = height;
   AdjustWindowRectEx(&window_rect, dwStyle, FALSE, dwExStyle);
 
-  hwnd = CreateWindowEx(dwExStyle, window_class, "Deferred Renderer Demo", dwStyle, 0, 0,
+  hwnd = CreateWindowEx(dwExStyle, window_class, "SensEngine Demo", dwStyle, 0, 0,
                              window_rect.right - window_rect.left, window_rect.bottom - window_rect.top,
                              NULL, NULL, GetModuleHandle(0), NULL);
   if(!hwnd)

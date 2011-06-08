@@ -62,6 +62,6 @@ SET(SENSE_util_hdrs
   util/util.hpp
 )
 
-ADD_EXECUTABLE(renderer_demo main.cpp ${SENSE_pipeline_srcs} ${SENSE_pipeline_hdrs} ${SENSE_util_hdrs})
+ADD_EXECUTABLE(SensEngine main.cpp ${SENSE_pipeline_srcs} ${SENSE_pipeline_hdrs} ${SENSE_util_hdrs})
 
-TARGET_LINK_LIBRARIES(renderer_demo ${OPENGL_gl_LIBRARY} ${PLATFORM_LIBRARIES} ${Boost_LIBRARIES} ${PYTHON_LIBRARIES})
+TARGET_LINK_LIBRARIES(SensEngine ${OPENGL_gl_LIBRARY} ${PLATFORM_LIBRARIES} ${Boost_LIBRARIES} ${PYTHON_LIBRARIES})

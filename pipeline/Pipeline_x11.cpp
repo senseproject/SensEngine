@@ -134,7 +134,7 @@ void Pipeline::platformInit() {
 
   try { // everything from here on needs to close the window if there's an error
 
-  XStoreName(dpy, win, "Deferred Renderer Demo");
+  XStoreName(dpy, win, "SensEngine Demo");
   XMapWindow(dpy, win);
   // Query if the needed GLX extensions are present
   const char *glx_ext_string = glXQueryExtensionsString(dpy, DefaultScreen(dpy));
