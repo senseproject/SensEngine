@@ -58,6 +58,7 @@ SET(SENSE_pipeline_hdrs
 
 SET(SENSE_python_srcs
   python/module.cpp
+  python/pipeline/MaterialDefinition.cpp
 )
 
 SET(SENSE_python_hdrs

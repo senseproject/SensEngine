@@ -15,6 +15,8 @@
 #include "module.hpp"
 #include "pywarnings.hpp"
 
+extern void initMaterialDefinition(PyObject*);
+
 PyModuleDef SenseModule = {
   PyModuleDef_HEAD_INIT,
   "SensEngine",
@@ -24,5 +26,6 @@ PyModuleDef SenseModule = {
 
 PyMODINIT_FUNC initSensEngine() {
   PyObject *m = PyModule_Create(&SenseModule);
+  initMaterialDefinition(m);
   return m;
 }
