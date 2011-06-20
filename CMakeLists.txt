@@ -12,6 +12,7 @@ ENDIF(CMAKE_COMPILER_IS_GNUCXX)
 IF(MSVC)
     ADD_DEFINITIONS("-D_CRT_SECURE_NO_WARNINGS")
     ADD_DEFINITIONS("-DNOMINMAX")
+	ADD_DEFINITIONS("-D_SECURE_SCL=0")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /arch:SSE2")
 ENDIF(MSVC)
 
@@ -58,6 +59,9 @@ SET(SENSE_pipeline_hdrs
 
 SET(SENSE_python_srcs
   python/module.cpp
+)
+
+SET(SENSE_python_pipeline_srcs
   python/pipeline/MaterialDefinition.cpp
 )
 
@@ -82,7 +86,7 @@ SET(SENSE_link_libraries
 
 ADD_LIBRARY(SenseCore
             ${SENSE_pipeline_srcs} ${SENSE_pipeline_hdrs}
-            ${SENSE_python_srcs}   ${SENSE_python_hdrs}
+            ${SENSE_python_srcs} ${SENSE_python_pipeline_srcs} ${SENSE_python_hdrs}
             ${SENSE_util_hdrs}
 )
 IF(CMAKE_COMPILER_IS_GNUCXX)
@@ -96,5 +100,10 @@ ADD_LIBRARY(PySensEngine SHARED pysense.cpp)
 TARGET_LINK_LIBRARIES(PySensEngine ${SENSE_link_libraries})
 SET_TARGET_PROPERTIES(PySensEngine PROPERTIES PREFIX "" OUTPUT_NAME "SensEngine")
 IF(WIN32)
-  SET_TARGET_PROPERTIES(PySensEngine PROPERTIEs SUFFIX ".pyd")
+  SET_TARGET_PROPERTIES(PySensEngine PROPERTIES SUFFIX ".pyd")
 ENDIF(WIN32)
+
+SOURCE_GROUP("pipeline" FILES ${SENSE_pipeline_srcs} ${SENSE_pipeline_hdrs})
+SOURCE_GROUP("python" FILES ${SENSE_python_srcs} ${SENSE_python_hdrs})
+SOURCE_GROUP("python\\pipeline" FILES ${SENSE_python_pipeline_srcs})
+SOURCE_GROUP("util" FILES ${SENSE_util_hdrs})

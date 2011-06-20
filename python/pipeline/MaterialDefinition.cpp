@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <Python.h>
 #include "python/module.hpp"
 #include "python/pywarnings.hpp"
 #include "pipeline/DefinitionTypes.hpp"
@@ -108,7 +107,6 @@ static PyObject *PyMaterialDef_add_uniform(PyMaterialDef *self, PyObject *args, 
   static char* keywords[] = { "name", "type", "value" };
   PyObject *name;
   unsigned int itype;
-  UniformDef::Type type = UniformDef::Type(itype);
   PyObject *value;
   if(!PyArg_ParseTupleAndKeywords(args, kwds, "UI|O", keywords, &name, &itype, &value))
     return 0;
@@ -120,8 +118,8 @@ static PyObject *PyMaterialDef_add_uniform(PyMaterialDef *self, PyObject *args, 
   Py_DECREF(bytes);
 
   UniformDef def;
-  def.type = type;
-  switch(type) {
+  def.type = UniformDef::Type(itype);
+  switch(def.type) {
     case UniformDef::Texture: {
       PyObject *bytes = PyUnicode_AsUTF8String(value);
       if(!bytes)
@@ -151,7 +149,7 @@ static PyMethodDef PyMaterialDef_methods[] = {
   {0, 0, 0, 0}
 };
 
-PyTypeObject PyMaterialDef_Type {
+PyTypeObject PyMaterialDef_Type = {
   PyObject_HEAD_INIT(0)
   "SensEngine.MaterialDef",
   sizeof(PyMaterialDef),
