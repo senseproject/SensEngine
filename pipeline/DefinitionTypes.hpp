@@ -48,6 +48,7 @@ namespace std {
 struct UniformDef {
   enum Type {
     Texture,
+    Webview,
     ModelView,
     Projection,
     DepthInfo,

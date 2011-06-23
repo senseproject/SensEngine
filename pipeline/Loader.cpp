@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <python/module.hpp>
+#include <boost/filesystem.hpp>
+
 #include "Loader.hpp"
 #include "Material.hpp"
 #include "GL/glew.h"
@@ -53,6 +56,23 @@ void Loader::addMaterial(std::string name, MaterialDef def) {
   if(it != materials.end() && !it->second.expired())
       buildMaterial(it->second.lock(), *(i.first));
 }
+
+void Loader::loadMaterialFiles(boost::filesystem::path dir) {
+  if(!exists(dir)) return;
+  PyObject* old_path = appendSysPath(dir.c_str(), true);
+
+  boost::filesystem::directory_iterator end_itr;
+  for(boost::filesystem::directory_iterator itr(dir); itr != end_itr; ++itr) {
+    if(itr->path().extension() == ".smtl") {
+      FILE *fp = fopen(itr->path().c_str(), "r");
+      if(!fp)
+        continue; // TODO: print some sort of error
+      PyRun_SimpleFileEx(fp, itr->path().c_str(), 1);
+    }
+  }
+  restoreSysPath(old_path);
+}
+
 
 void Loader::buildMaterial(std::shared_ptr<Material> mat, std::pair<std::string, MaterialDef> matdef) {
   mat->program = loadProgram(matdef.second.shaders);

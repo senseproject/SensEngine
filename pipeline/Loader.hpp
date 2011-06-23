@@ -19,6 +19,7 @@
 #include <string>
 #include "DefinitionTypes.hpp"
 #include <unordered_map>
+#include <boost/filesystem/path.hpp>
 #include <boost/thread/shared_mutex.hpp>
 
 class GlShader;
@@ -33,6 +34,7 @@ public:
   std::shared_ptr<Drawbuffer> loadMesh(std::string model);
 
   void addMaterial(std::string name, MaterialDef def);
+  void loadMaterialFiles(boost::filesystem::path);
 private:
   void buildMaterial(std::shared_ptr<Material> mat, std::pair<std::string, MaterialDef> matdef);
   std::shared_ptr<Texture> loadTexture(std::string path);
@@ -55,6 +57,7 @@ private:
   void run();
   void cleanup();
 
+public:
 #ifndef _MSC_VER
   Loader()=default;
   ~Loader()=default;

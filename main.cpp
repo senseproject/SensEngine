@@ -12,7 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "python/module.hpp"
 #include "pipeline/Pipeline.hpp"
+
+void initClientModule(std::shared_ptr<Pipeline> p) {
+  PyObject* SensModule = PyImport_ImportModule("SensEngine");
+  PyObject* m = PyImport_AddModule("SensEngine.client");
+  PyModule_AddObject(m, "__builtins__", PyEval_GetBuiltins());
+  PyModule_AddObject(m, "pipeline", createPyObject(p));
+  PyModule_AddObject(SensModule, "client", m);
+  PyModule_AddStringConstant(SensModule, "__path__", "SensEngine");
+}
 
 struct DemoConsole : public Pipeline::KbdCallback {
   virtual ~DemoConsole() {}
@@ -24,6 +34,13 @@ int main(int argc, char **argv) {
   p->pushKbdCallback(new DemoConsole);
   auto fsaa_level_iter = p->fsaaLevels().rbegin();
   p->setFsaa(*fsaa_level_iter); // set the highest possible FSAA level
+
+  Py_NoSiteFlag = 1;
+  Py_SetProgramName((wchar_t*)L"SensEngine");
+  Py_InitializeEx(0);
+  PyImport_AppendInittab("SensEngine", initSensEngine);
+  initClientModule(p);
+  p->loader().loadMaterialFiles("./data/materials");
   for(;;) {
     p->beginFrame();
     p->render();

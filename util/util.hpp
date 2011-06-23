@@ -26,7 +26,7 @@
 // Selectively disable warnings on GCC
 #ifdef __GNUC__
 #define GCC_DO_PRAGMA(prag) _Pragma(#prag)
-#if __GNUC_MINOR__ >= 5
+#if __GNUC_MINOR__ >= 6
 #define GCC_DIAGNOSTIC_PUSH  GCC_DO_PRAGMA(GCC diagnostic push)
 #define GCC_DIAGNOSTIC_POP   GCC_DO_PRAGMA(GCC diagnostic pop)
 #else

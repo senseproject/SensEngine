@@ -46,7 +46,7 @@ struct PySharedPtr {
   }
     
   // Not all classes have to use this init, but its a solid template for an empty init function
-  static int init(PySharedPtr<T>* /*self*/, PyObject* args, PyObject* kwds) {
+  static int init(PyObject* /*self*/, PyObject* args, PyObject* kwds) {
     static char* kwlist[] = { NULL };
     if(!PyArg_ParseTupleAndKeywords(args, kwds, "", kwlist))
       return -1;
@@ -71,7 +71,7 @@ struct PySharedPtrAbstract {
   }
     
   // Not all classes have to use this init, but its a solid template for an empty init function
-  static int init(PySharedPtr<T>* /*self*/, PyObject* args, PyObject* kwds) {
+  static int init(PyObject* /*self*/, PyObject* args, PyObject* kwds) {
     static char* kwlist[] = { NULL };
     if(!PyArg_ParseTupleAndKeywords(args, kwds, "", kwlist))
       return -1;
@@ -107,5 +107,9 @@ std::shared_ptr<T> getAbstractPyPtr(PyObject* obj) {
 }
 
 PyMODINIT_FUNC initSensEngine(void);
+void restoreSysPath(PyObject*);
+PyObject* appendSysPath(const char*, bool=false);
+
+#define PyDict_AddEnum(dict, enum, value) PyDict_SetItemString(dict, #value, PyLong_FromLong(enum::value));
 
 #endif // SENSE_PYTHON_MODULE_HPP

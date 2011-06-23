@@ -16,10 +16,7 @@
 #include "python/pywarnings.hpp"
 #include "pipeline/DefinitionTypes.hpp"
 
-struct PyMaterialDef {
-  PyObject_HEAD
-  MaterialDef def;
-};
+#include "PyMaterialDef.hpp"
 
 static void MaterialDef_dealloc(PyObject *self) {
   (&((PyMaterialDef*)self)->def)->~MaterialDef();
@@ -104,7 +101,7 @@ static int PyMaterialDef_setGeom(PyMaterialDef *self, PyObject *value, PyObject*
 }
 
 static PyObject *PyMaterialDef_add_uniform(PyMaterialDef *self, PyObject *args, PyObject *kwds) {
-  static char* keywords[] = { "name", "type", "value" };
+  static char* keywords[] = { "name", "type", "value", 0 };
   PyObject *name;
   unsigned int itype;
   PyObject *value;
@@ -173,12 +170,15 @@ void initMaterialDefinition(PyObject *m) {
     return;
   Py_INCREF(&PyMaterialDef_Type);
   PyModule_AddObject(m, "MaterialDef", (PyObject*)&PyMaterialDef_Type);
-  PyDict_SetItemString(PyMaterialDef_Type.tp_dict, "Texture", PyLong_FromLong(UniformDef::Texture));
-  PyDict_SetItemString(PyMaterialDef_Type.tp_dict, "ModelView", PyLong_FromLong(UniformDef::ModelView));
-  PyDict_SetItemString(PyMaterialDef_Type.tp_dict, "Projection", PyLong_FromLong(UniformDef::Projection));
-  PyDict_SetItemString(PyMaterialDef_Type.tp_dict, "DepthInfo", PyLong_FromLong(UniformDef::DepthInfo));
-  PyDict_SetItemString(PyMaterialDef_Type.tp_dict, "LightPosition", PyLong_FromLong(UniformDef::LightPosition));
-  PyDict_SetItemString(PyMaterialDef_Type.tp_dict, "LightColor", PyLong_FromLong(UniformDef::LightColor));
-  PyDict_SetItemString(PyMaterialDef_Type.tp_dict, "LightRadius", PyLong_FromLong(UniformDef::LightRadius));
-  PyDict_SetItemString(PyMaterialDef_Type.tp_dict, "BoneMatrices", PyLong_FromLong(UniformDef::BoneMatrices));
+
+  // Add all the special constants to our material type
+  PyDict_AddEnum(PyMaterialDef_Type.tp_dict, UniformDef, Texture);
+  PyDict_AddEnum(PyMaterialDef_Type.tp_dict, UniformDef, Webview);
+  PyDict_AddEnum(PyMaterialDef_Type.tp_dict, UniformDef, ModelView);
+  PyDict_AddEnum(PyMaterialDef_Type.tp_dict, UniformDef, Projection);
+  PyDict_AddEnum(PyMaterialDef_Type.tp_dict, UniformDef, DepthInfo);
+  PyDict_AddEnum(PyMaterialDef_Type.tp_dict, UniformDef, LightPosition);
+  PyDict_AddEnum(PyMaterialDef_Type.tp_dict, UniformDef, LightColor);
+  PyDict_AddEnum(PyMaterialDef_Type.tp_dict, UniformDef, LightRadius);
+  PyDict_AddEnum(PyMaterialDef_Type.tp_dict, UniformDef, BoneMatrices);
 }

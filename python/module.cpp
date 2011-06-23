@@ -16,6 +16,7 @@
 #include "pywarnings.hpp"
 
 extern void initMaterialDefinition(PyObject*);
+extern void initPipeline(PyObject*);
 
 PyModuleDef SenseModule = {
   PyModuleDef_HEAD_INIT,
@@ -27,5 +28,24 @@ PyModuleDef SenseModule = {
 PyMODINIT_FUNC initSensEngine() {
   PyObject *m = PyModule_Create(&SenseModule);
   initMaterialDefinition(m);
+  initPipeline(m);
   return m;
+}
+
+PyObject* appendSysPath(const char* path, bool save_old) {
+  PyObject* sys_path = PySys_GetObject("path");
+  PyObject* old_sys_path = 0;
+  if(save_old) {
+     old_sys_path = PySequence_List(sys_path);
+  }
+  PyObject* path_as_pyunicode = PyUnicode_FromString(path);
+  PyList_Append(sys_path, path_as_pyunicode);
+  Py_DECREF(path_as_pyunicode);
+  return old_sys_path;
+}
+
+
+void restoreSysPath(PyObject* sys_path) {
+  PySys_SetObject("path", sys_path);
+  Py_DECREF(sys_path);
 }

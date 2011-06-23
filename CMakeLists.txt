@@ -25,11 +25,12 @@ ELSE(WIN32)
 ENDIF(WIN32)
 
 FIND_PACKAGE(OpenGL REQUIRED)
-FIND_PACKAGE(Boost COMPONENTS system thread REQUIRED)
+FIND_PACKAGE(Boost COMPONENTS filesystem system thread REQUIRED)
 FIND_PACKAGE(Python 3 REQUIRED)
 
 ADD_DEFINITIONS(-DGLEW_STATIC)
 ADD_DEFINITIONS(-DBOOST_ALL_NO_LIB)
+ADD_DEFINITIONS(-D BOOST_FILESYSTEM_VERSION=3)
 INCLUDE_DIRECTORIES("3rdparty/glew")
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
@@ -63,6 +64,11 @@ SET(SENSE_python_srcs
 
 SET(SENSE_python_pipeline_srcs
   python/pipeline/MaterialDefinition.cpp
+  python/pipeline/Pipeline.cpp
+)
+
+SET(SENSE_python_pipeline_hdrs
+  python/pipeline/PyMaterialDef.hpp
 )
 
 SET(SENSE_python_hdrs
@@ -86,7 +92,8 @@ SET(SENSE_link_libraries
 
 ADD_LIBRARY(SenseCore
             ${SENSE_pipeline_srcs} ${SENSE_pipeline_hdrs}
-            ${SENSE_python_srcs} ${SENSE_python_pipeline_srcs} ${SENSE_python_hdrs}
+            ${SENSE_python_srcs} ${SENSE_python_hdrs}
+            ${SENSE_python_pipeline_srcs} ${SENSE_python_pipeline_hdrs}
             ${SENSE_util_hdrs}
 )
 IF(CMAKE_COMPILER_IS_GNUCXX)
@@ -105,5 +112,5 @@ ENDIF(WIN32)
 
 SOURCE_GROUP("pipeline" FILES ${SENSE_pipeline_srcs} ${SENSE_pipeline_hdrs})
 SOURCE_GROUP("python" FILES ${SENSE_python_srcs} ${SENSE_python_hdrs})
-SOURCE_GROUP("python\\pipeline" FILES ${SENSE_python_pipeline_srcs})
+SOURCE_GROUP("python\\pipeline" FILES ${SENSE_python_pipeline_srcs} ${SENSE_python_pipeline_hdrs})
 SOURCE_GROUP("util" FILES ${SENSE_util_hdrs})

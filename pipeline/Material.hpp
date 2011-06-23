@@ -84,14 +84,13 @@ private:
   std::vector<Uniform> uniforms;
   std::shared_ptr<ShaderProgram> program;
 
+  Material() {}
 #ifndef _MSC_VER
-  Material() =default;
   Material(const Material&)=delete;
   Material& operator=(const Material&)=delete;
 #else
   // visual studio 2010 still doesn't support =delete, so just leave them unimplemented
   // for the linker to throw an error on instead of the compiler
-  Material() {}
   Material(const Material&);
   Material& operator=(const Material&);
 #endif
