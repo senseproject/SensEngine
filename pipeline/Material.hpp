@@ -21,7 +21,7 @@
 #include <vector>
 
 struct ShaderSet;
-struct Texture;
+class Texture;
 
 class Uniform {
   UniformDef::Type type;
@@ -33,10 +33,7 @@ class Uniform {
   friend class Loader;
 };
 
-struct GlShader {
-  ~GlShader();
-private:
-
+class GlShader {
   unsigned int gl_id;
 
   enum {
@@ -50,6 +47,9 @@ private:
   friend class Pipeline;
   friend class ShaderProgram;
   friend class Loader;
+
+public:
+  ~GlShader();
 };
 
 class ShaderProgram {

@@ -40,7 +40,7 @@ int main(int argc, char **argv) {
   Py_InitializeEx(0);
   PyImport_AppendInittab("SensEngine", initSensEngine);
   initClientModule(p);
-  p->loader().loadMaterialFiles("./data/materials");
+  p->loader().loadMaterialFiles("../data/materials");
   for(;;) {
     p->beginFrame();
     p->render();

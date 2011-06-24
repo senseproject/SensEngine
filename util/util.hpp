@@ -49,4 +49,22 @@
 #define GCC_DISABLE_WARNING(warn)
 #endif
 
+// use _wfopen on win32 and fopen on Unix
+#ifdef _WIN32
+#define openFile _wfopen
+#define openFile_R L"r"
+#define openFile_RB L"rb"
+#define openFile_W L"w"
+#define openFile_WB L"wb"
+#define openfile_WR L"wr"
+#define openFile_WRB L"wrb"
+#else _WIN32
+#define openFile fopen
+#define openFile_R "r"
+#define openFile_RB "rb"
+#define openFile_W "w"
+#define openFile_WB "wb"
+#define openfile_WR "wr"
+#define openFile_WRB "wrb"
+#endif // _WIN32
 #endif // SENSE_UTIL_UTIL_HPP

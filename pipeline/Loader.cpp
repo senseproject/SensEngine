@@ -21,6 +21,7 @@
 #include "Material.hpp"
 #include "GL/glew.h"
 #include "glexcept.hpp"
+#include "util/util.hpp"
 
 void Loader::init() {
   std::stringstream ss;
@@ -81,15 +82,15 @@ void Loader::addMaterial(std::string name, MaterialDef def) {
 
 void Loader::loadMaterialFiles(boost::filesystem::path dir) {
   if(!exists(dir)) return;
-  PyObject* old_path = appendSysPath(dir.c_str(), true);
+  PyObject* old_path = appendSysPath(dir.string().c_str(), true);
 
   boost::filesystem::directory_iterator end_itr;
   for(boost::filesystem::directory_iterator itr(dir); itr != end_itr; ++itr) {
     if(itr->path().extension() == ".smtl") {
-      FILE *fp = fopen(itr->path().c_str(), "r");
+      FILE *fp = openFile(itr->path().c_str(), openFile_R);
       if(!fp)
         continue; // TODO: print some sort of error
-      PyRun_SimpleFileEx(fp, itr->path().c_str(), 1);
+      PyRun_SimpleFileEx(fp, itr->path().string().c_str(), 1);
     }
   }
   restoreSysPath(old_path);
@@ -137,11 +138,11 @@ std::shared_ptr<GlShader> Loader::loadShader(std::string path, ShaderType type) 
   shader->gl_id = GL_CHECK(glCreateShader(gl_shader_type))
   boost::filesystem::ifstream stream;
   stream.exceptions(std::ifstream::badbit | std::ifstream::failbit | std::ifstream::eofbit);
-  boost::filesystem::path shader_path("./data/shaders");
+  boost::filesystem::path shader_path("../data/shaders");
   shader_path = shader_path / path;
   if(!exists(shader_path))
     throw std::runtime_error("Can't find shader file "+shader_path.string());
-  stream.open(boost::filesystem::path("./data/shaders") / path);
+  stream.open(shader_path);
   std::string shader_source((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
   const char* sources[2];
   sources[0] = shader_header.c_str();
