@@ -84,6 +84,7 @@ Pipeline::Pipeline() : loader_init_complete(false), loader_be_done(false), shado
   // Enable some standard state
   GL_CHECK(glEnable(GL_MULTISAMPLE))
   GL_CHECK(glEnable(GL_FRAMEBUFFER_SRGB))
+  GL_CHECK(glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE))
   glClearColor(0.8f, 0.8f, 0.9f, 1.f);
 
   // Create our FBOs
