@@ -14,13 +14,35 @@
 
 #include <python/module.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/filesystem/fstream.hpp>
 
 #include "Loader.hpp"
+#include "Drawbuffer.hpp"
 #include "Material.hpp"
 #include "GL/glew.h"
 #include "glexcept.hpp"
 
 void Loader::init() {
+  std::stringstream ss;
+  unsigned int num_instances = 64; // TODO: fetch from config system
+  unsigned int num_bones = 4; // TODO: fetch from config system
+  ss << "#version 150" << std::endl;
+  ss << "#extension GL_ARB_draw_instanced : require" << std::endl;
+  ss << "#extension GL_ARB_explicit_attrib_location : require" << std::endl;
+  ss << "#define QNT_MAX_INSTANCES " << num_instances << std::endl;
+  ss << "#define QNT_MAX_BONES " << num_bones << std::endl;
+  ss << "#define QNT_VERT_INPUT_POS " << DrawBuffer::Pos << std::endl;
+  ss << "#define QNT_VERT_INPUT_NOR " << DrawBuffer::Nor << std::endl;
+  ss << "#define QNT_VERT_INPUT_TAN " << DrawBuffer::Tan << std::endl;
+  ss << "#define QNT_VERT_INPUT_COL " << DrawBuffer::Col << std::endl;
+  ss << "#define QNT_VERT_INPUT_TE0 " << DrawBuffer::Te0 << std::endl;
+  ss << "#define QNT_VERT_INPUT_TE1 " << DrawBuffer::Te1 << std::endl;
+  ss << "#define QNT_VERT_INPUT_SKINIDX " << DrawBuffer::SkinIdx << std::endl;
+  ss << "#define QNT_VERT_INPUT_SKINWEIGHT " << DrawBuffer::SkinWeight << std::endl;
+  ss << "#define QNT_FRAG_OUTPUT_COL 0" << std::endl;
+  ss << "#define QNT_FRAG_OUTPUT_NOR 1" << std::endl;
+  ss << std::endl;
+  shader_header = ss.str();
 }
 
 void Loader::run() {
@@ -97,6 +119,9 @@ std::shared_ptr<Texture> Loader::loadTexture(std::string path) {
 }
 
 std::shared_ptr<GlShader> Loader::loadShader(std::string path, ShaderType type) {
+  if(path.empty())
+    return std::shared_ptr<GlShader>();
+
   auto it = shaders.find(path);
   if(it != shaders.end() && !it->second.expired())
     return it->second.lock();
@@ -107,8 +132,35 @@ std::shared_ptr<GlShader> Loader::loadShader(std::string path, ShaderType type) 
     case Fragment: gl_shader_type = GL_FRAGMENT_SHADER; break;
     case Geometry: gl_shader_type = GL_GEOMETRY_SHADER; break;
   }
+
+  GlShader* shader = new GlShader;
+  shader->gl_id = GL_CHECK(glCreateShader(gl_shader_type))
+  boost::filesystem::ifstream stream;
+  stream.exceptions(std::ifstream::badbit | std::ifstream::failbit | std::ifstream::eofbit);
+  boost::filesystem::path shader_path("./data/shaders");
+  shader_path = shader_path / path;
+  if(!exists(shader_path))
+    throw std::runtime_error("Can't find shader file "+shader_path.string());
+  stream.open(boost::filesystem::path("./data/shaders") / path);
+  std::string shader_source((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
+  const char* sources[2];
+  sources[0] = shader_header.c_str();
+  sources[1] = shader_source.c_str();
+  GL_CHECK(glShaderSource(shader->gl_id, 2, sources, 0))
+  GL_CHECK(glCompileShader(shader->gl_id))
+  int compile_status;
+  GL_CHECK(glGetShaderiv(shader->gl_id, GL_COMPILE_STATUS, &compile_status))
+  if(compile_status == GL_FALSE) {
+    int info_log_length;
+    GL_CHECK(glGetShaderiv(shader->gl_id, GL_INFO_LOG_LENGTH, &info_log_length))
+    char *log = new char[info_log_length];
+    GL_CHECK(glGetShaderInfoLog(shader->gl_id, info_log_length, &info_log_length, log))
+    std::string infolog = log;
+    delete[] log;
+    throw std::runtime_error("Error compiling shader " + shader_path.string() + ":\n" + infolog);
+  }
   
-  return std::shared_ptr<GlShader>(); // TODO: create a shader object and compile the shader
+  return std::shared_ptr<GlShader>(shader);
 }
 
 std::shared_ptr<ShaderProgram> Loader::loadProgram(ShaderKey key) {
@@ -118,17 +170,18 @@ std::shared_ptr<ShaderProgram> Loader::loadProgram(ShaderKey key) {
   std::shared_ptr<ShaderProgram> prog = std::shared_ptr<ShaderProgram>(new ShaderProgram);
   prog->gl_id = GL_CHECK(glCreateProgram())
   if(!key.frag.empty())
-    prog->frag = loadShader(key.frag, Fragment);
+    prog->frag = loadShader(key.frag+".fs", Fragment);
   else
     throw std::runtime_error("Programs must have at least a vertex and fragment shader (missing fragment)");
   if(!key.vert.empty())
-    prog->vert = loadShader(key.vert, Vertex);
+    prog->vert = loadShader(key.vert+".vs", Vertex);
   else
     throw std::runtime_error("Programs must have at least a vertex and fragment shader (missing vertex)");
   if(!key.geom.empty())
-    prog->geom = loadShader(key.geom, Geometry);
+    prog->geom = loadShader(key.geom+".gs", Geometry);
   GL_CHECK(glAttachShader(prog->gl_id, prog->vert->gl_id))
-  GL_CHECK(glAttachShader(prog->gl_id, prog->geom->gl_id))
+  if(prog->geom)
+    GL_CHECK(glAttachShader(prog->gl_id, prog->geom->gl_id))
   GL_CHECK(glAttachShader(prog->gl_id, prog->frag->gl_id))
   GL_CHECK(glLinkProgram(prog->gl_id))
   int link_status;

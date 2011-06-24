@@ -34,8 +34,8 @@ class Uniform {
 };
 
 struct GlShader {
+  ~GlShader();
 private:
-  ~GlShader(); // GlShaders delete themselves when they're destroyed
 
   unsigned int gl_id;
 

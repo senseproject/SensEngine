@@ -75,6 +75,7 @@ protected:
 #endif
 
   friend class Pipeline;
+  friend class Loader;
 };
 
 class IndexedDrawBuffer: public DrawBuffer {

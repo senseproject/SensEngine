@@ -36,6 +36,7 @@ public:
   void addMaterial(std::string name, MaterialDef def);
   void loadMaterialFiles(boost::filesystem::path);
 private:
+  std::string shader_header;
   void buildMaterial(std::shared_ptr<Material> mat, std::pair<std::string, MaterialDef> matdef);
   std::shared_ptr<Texture> loadTexture(std::string path);
   enum ShaderType {
