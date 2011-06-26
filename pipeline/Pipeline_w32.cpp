@@ -42,16 +42,13 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 int format_attribs[] = {
   WGL_DRAW_TO_WINDOW_ARB, GL_TRUE,
   WGL_SUPPORT_OPENGL_ARB, GL_TRUE,
-  WGL_DOUBLE_BUFFER_ARB, GL_TRUE,
   WGL_ACCELERATION_ARB, WGL_FULL_ACCELERATION_ARB,
+  WGL_COLOR_BITS_ARB, 24,
   WGL_DEPTH_BITS_ARB, 24,
   WGL_STENCIL_BITS_ARB, 8,
-  WGL_RED_BITS_ARB, 8,
-  WGL_GREEN_BITS_ARB, 8,
-  WGL_BLUE_BITS_ARB, 8,
-  WGL_ALPHA_BITS_ARB, 8,
-  WGL_PIXEL_TYPE_ARB, WGL_TYPE_RGBA_ARB,
-  WGL_FRAMEBUFFER_SRGB_CAPABLE_ARB, GL_TRUE
+  WGL_DOUBLE_BUFFER_ARB, GL_TRUE,
+  WGL_FRAMEBUFFER_SRGB_CAPABLE_EXT, GL_TRUE,
+  0, 0
 };
 
 static int context_attribs[] = {
@@ -137,16 +134,17 @@ void Pipeline::platformInit() {
   ChoosePixelFormatARB = (PFNWGLCHOOSEPIXELFORMATARBPROC)wglGetProcAddress("wglChoosePixelFormatARB");
   wglMakeCurrent(0, 0);
   wglDeleteContext(tmp_ctx);
-  unsigned int num_results;
-  int new_pf;
+  unsigned int num_results = 0;
+  int new_pf = 0;
 
   if(!ChoosePixelFormatARB || !CreateContextAttribs)
     throw std::runtime_error("Could not get gl3 context entrypoints");
 
-  ChoosePixelFormatARB(hdc, format_attribs, NULL, 1, &new_pf, &num_results);
+  BOOL valid = ChoosePixelFormatARB(hdc, format_attribs, NULL, 1, &new_pf, &num_results);
 
-  if(!new_pf)
-    throw std::runtime_error("Could not get a pixel format for the window");
+  if(!valid || !num_results) {
+    throw std::runtime_error("No matching pixel format found!");
+  }
 
   DescribePixelFormat(hdc, new_pf, sizeof(tmp_pfd), &tmp_pfd);
   SetPixelFormat(hdc, new_pf, &tmp_pfd);

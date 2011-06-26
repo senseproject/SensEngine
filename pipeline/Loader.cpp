@@ -95,10 +95,10 @@ void Loader::loadMaterialFiles(boost::filesystem::path dir) {
   boost::filesystem::directory_iterator end_itr;
   for(boost::filesystem::directory_iterator itr(dir); itr != end_itr; ++itr) {
     if(itr->path().extension() == ".smtl") {
-      FILE *fp = openFile(itr->path().c_str(), openFile_R);
-      if(!fp)
-        continue; // TODO: print some sort of error
-      PyRun_SimpleFileEx(fp, itr->path().string().c_str(), 1);
+      boost::filesystem::ifstream stream;
+      stream.open(itr->path());
+      std::string pymtlcode((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
+      PyRun_SimpleString(pymtlcode.c_str());
     }
   }
   restoreSysPath(old_path);
