@@ -58,7 +58,7 @@
 #define openFile_WB L"wb"
 #define openfile_WR L"wr"
 #define openFile_WRB L"wrb"
-#else _WIN32
+#else
 #define openFile fopen
 #define openFile_R "r"
 #define openFile_RB "rb"
@@ -67,4 +67,5 @@
 #define openfile_WR "wr"
 #define openFile_WRB "wrb"
 #endif // _WIN32
+
 #endif // SENSE_UTIL_UTIL_HPP

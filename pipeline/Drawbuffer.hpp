@@ -20,9 +20,10 @@
 class Renderer;
 
 class DrawBuffer {
-protected:
+public:
   virtual ~DrawBuffer();
 
+protected:
   enum AttribType {
     Byte,
     UByte,
@@ -62,7 +63,7 @@ private:
   unsigned int vao_id, vbo_id;
 
 protected:
-  DrawBuffer();
+  DrawBuffer(unsigned int vbo_id=0);
 
 #ifndef _MSC_VER
   DrawBuffer(const DrawBuffer&)=delete;
@@ -84,7 +85,7 @@ class IndexedDrawBuffer: public DrawBuffer {
   virtual void draw(unsigned int count=1);
   void setIndices(void* data, size_t num_indices, AttribType type, bool stream=false);
 
-  IndexedDrawBuffer();
+  IndexedDrawBuffer(unsigned int ibo_id=0);
 
   AttribType m_index_type;
   size_t m_num_indices;

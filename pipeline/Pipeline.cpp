@@ -21,9 +21,14 @@
 #include <cstdio>
 
 #include "Pipeline.hpp"
+#include "Drawbuffer.hpp"
+#include "Material.hpp"
+#include "Panel.hpp"
 #include "RenderTarget.hpp"
 #include "Texture.hpp"
 #include "glexcept.hpp"
+
+#include "3rdparty/glm/gtc/type_ptr.hpp"
 
 void Pipeline::runLoaderThread() {
   try {
@@ -174,8 +179,8 @@ void Pipeline::render() {
   GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, current_framebuffer->gl_fboid)) // our current render target
   GL_CHECK(glClear(GL_COLOR_BUFFER_BIT))
   // TODO: loop through lights and fill the framebuffer
-  GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, 0))
   if(current_framebuffer->build_mips) {
+    GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, 0)) // unbind the framebuffer so we can read it TODO: is this needed?
     for(auto i = current_framebuffer->bound_textures.begin(); i != current_framebuffer->bound_textures.end(); ++i) {
       GL_CHECK(glBindTexture(GL_TEXTURE_2D, (*i)->gl_texid))
       GL_CHECK(glGenerateMipmap(GL_TEXTURE_2D))
@@ -184,7 +189,18 @@ void Pipeline::render() {
 }
 
 void Pipeline::endFrame() {
-  GL_CHECK(glBindFramebuffer(GL_READ_FRAMEBUFFER, default_framebuffer->gl_fboid))
+  GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, default_framebuffer->gl_fboid)) // TODO: make sure we never need this here
+  // first things first: we draw all the panels
+  pushProjMat(glm::mat4(1.f));
+  for(auto i = panels.begin(); i != panels.end(); ++i) {
+    hPanel p = *i;
+    p->buf->bind();
+    int mv_id = useMaterial(p->mat);
+    glUniformMatrix4fv(mv_id, 1, 0, glm::value_ptr(p->matrix));
+    p->buf->draw();
+  }
+  popProjMat();
+  GL_CHECK(glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0))
   // TODO: convert this blit into a tonemapping operation of some sort
   GL_CHECK(glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST))
   platformSwap();
@@ -236,4 +252,41 @@ Pipeline::GpuMemAvailable Pipeline::queryAvailableMem() {
     meminfo.texture = -1;
   }
   return meminfo;
+}
+
+Pipeline::hPanel Pipeline::createPanel(float xscale, float yscale, std::string material)  {
+  Panel *p = new Panel;
+  p->mat = loader().loadMaterial(material);
+  p->buf = loader().loadMesh("__quad__");
+  p->matrix = glm::mat4(xscale, 0.f, 0.f, 0.f,
+                        0.f, yscale, 0.f, 0.f,
+                        0.f, 0.f, 1.f, 0.f,
+                        0.f, 0.f, 0.f, 1.f);
+  hPanel panel(p);
+  panels.insert(panel);
+  return panel;
+}
+
+void Pipeline::destroyPanel(Pipeline::hPanel p) {
+  panels.erase(p);
+}
+
+int Pipeline::useMaterial(Pipeline::hMaterial mat) {
+  GL_CHECK(glUseProgram(mat->program->gl_id))
+  int mv_id;
+  for(auto i = mat->uniforms.begin(); i != mat->uniforms.end(); ++i) {
+    if(i->gl_id == -1)
+      continue;
+    switch(i->type) {
+    case UniformDef::ModelView:
+      mv_id = i->gl_id;
+      break;
+    case UniformDef::Projection:
+      GL_CHECK(glUniformMatrix4fv(i->gl_id, 1, 0, glm::value_ptr(projection_stack[0])))
+      break;
+    default:
+      throw std::runtime_error("Tried to use an unimplemented uniform type!");
+    }
+  }
+  return mv_id;
 }

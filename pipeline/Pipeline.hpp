@@ -30,20 +30,28 @@ GCC_DIAGNOSTIC_POP
 
 #include "util/queue.hpp"
 
+#include <set>
+#include <deque>
+
+#include "3rdparty/glm/glm.hpp"
+
 #define HANDLE(type) typedef std::shared_ptr<type> h##type;
 
 struct PipelinePlatform;
 
-class Drawbuffer;
+class DrawBuffer;
 class Material;
 class RenderTarget;
 class Texture;
 
+struct Panel;
+
 class Pipeline {
 public:
   HANDLE(Material)
-  HANDLE(Drawbuffer)
+  HANDLE(DrawBuffer)
   HANDLE(RenderTarget)
+  HANDLE(Panel)
 
   struct KbdCallback {
     enum Keysym {
@@ -85,6 +93,10 @@ private:
   // non-opengl settings
   int width, height;
 
+  // misc pipeline data
+  std::deque<glm::mat4> projection_stack;
+  std::set<hPanel> panels;
+
   GpuMemAvailable queryAvailableMem();
 
   void platformInit();
@@ -96,6 +108,7 @@ private:
   void platformAttachContext();
 
   void setupRenderTargets();
+  int useMaterial(hMaterial);
 
 #ifdef WIN32
   bool platformWndProcReturn;
@@ -128,6 +141,16 @@ public:
   // functions to set rendering options (FSAA, ANISO, &c)
   const std::set<int>& fsaaLevels() const { return fsaa_levels; }
   void setFsaa(int i) { if(fsaa_levels.find(i) != fsaa_levels.end()) { cur_fsaa = i; setupRenderTargets(); }}
+
+  // Create and destroy panels
+  hPanel createPanel(float, float, std::string);
+  void destroyPanel(hPanel);
+
+  // Play with the projection matrix
+  void pushProjMat(glm::mat4 m) {projection_stack.push_front(m);}
+  void popProjMat() {projection_stack.pop_front();}
+  
+      
 
 #ifdef WIN32
   friend LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);

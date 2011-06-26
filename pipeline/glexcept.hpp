@@ -16,6 +16,8 @@
 #define SENSE_PIPELINE_GLEXCEPT_HPP
 
 #include "util/util.hpp"
+#include <string>
+#include <stdexcept>
 
 static const char* glErrorString(GLenum err) {
   switch(err) {

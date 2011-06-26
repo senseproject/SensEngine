@@ -41,6 +41,7 @@ int main(int argc, char **argv) {
   PyImport_AppendInittab("SensEngine", initSensEngine);
   initClientModule(p);
   p->loader().loadMaterialFiles("../data/materials");
+  Pipeline::hPanel hud = p->createPanel(0.5f, 0.5f, "gui_hud");
   for(;;) {
     p->beginFrame();
     p->render();
@@ -48,4 +49,5 @@ int main(int argc, char **argv) {
     if(!p->platformEventLoop())
       break;
   }
+  p->destroyPanel(hud);
 }

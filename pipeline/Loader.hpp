@@ -23,7 +23,7 @@
 #include <boost/thread/shared_mutex.hpp>
 
 class GlShader;
-class Drawbuffer;
+class DrawBuffer;
 class Material;
 class ShaderProgram;
 class Texture;
@@ -31,7 +31,7 @@ class Texture;
 class Loader {
 public:
   std::shared_ptr<Material> loadMaterial(std::string materia);
-  std::shared_ptr<Drawbuffer> loadMesh(std::string model);
+  std::shared_ptr<DrawBuffer> loadMesh(std::string model);
 
   void addMaterial(std::string name, MaterialDef def);
   void loadMaterialFiles(boost::filesystem::path);
@@ -49,7 +49,7 @@ private:
 
   std::unordered_map<std::string, std::weak_ptr<Material>> materials;
   std::unordered_map<std::string, MaterialDef> material_defs;
-  std::unordered_map<std::string, std::weak_ptr<Drawbuffer>> meshes;
+  std::unordered_map<std::string, std::weak_ptr<DrawBuffer>> meshes;
   std::unordered_map<ShaderKey, std::weak_ptr<ShaderProgram>> programs;
   std::unordered_map<std::string, std::weak_ptr<GlShader>> shaders;
   std::unordered_map<std::string, std::weak_ptr<Texture>> textures;

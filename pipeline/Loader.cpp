@@ -17,6 +17,7 @@
 #include <boost/filesystem/fstream.hpp>
 
 #include "Loader.hpp"
+#include "Builtins.hpp"
 #include "Drawbuffer.hpp"
 #include "Material.hpp"
 #include "GL/glew.h"
@@ -26,12 +27,9 @@
 void Loader::init() {
   std::stringstream ss;
   unsigned int num_instances = 64; // TODO: fetch from config system
-  unsigned int num_bones = 4; // TODO: fetch from config system
   ss << "#version 150" << std::endl;
-  ss << "#extension GL_ARB_draw_instanced : require" << std::endl;
   ss << "#extension GL_ARB_explicit_attrib_location : require" << std::endl;
   ss << "#define SENSE_MAX_INSTANCES " << num_instances << std::endl;
-  ss << "#define SENSE_MAX_BONES " << num_bones << std::endl;
   ss << "#define SENSE_VERT_INPUT_POS " << DrawBuffer::Pos << std::endl;
   ss << "#define SENSE_VERT_INPUT_NOR " << DrawBuffer::Nor << std::endl;
   ss << "#define SENSE_VERT_INPUT_TAN " << DrawBuffer::Tan << std::endl;
@@ -62,15 +60,25 @@ std::shared_ptr<Material> Loader::loadMaterial(std::string material) {
   if(i != material_defs.end()) {
     mat = std::shared_ptr<Material>(new Material);
     buildMaterial(mat, *i);
+    materials.insert(std::make_pair(material, mat));
   }
   return mat;
 }
 
-std::shared_ptr<Drawbuffer> Loader::loadMesh(std::string model) {
+std::shared_ptr<DrawBuffer> Loader::loadMesh(std::string model) {
   auto it = meshes.find(model);
   if(it != meshes.end() && !it->second.expired())
     return it->second.lock();
-  return std::shared_ptr<Drawbuffer>(); // TODO: load the mesh
+  if(model != "__quad__")
+    throw std::runtime_error("Only the builtin quad mesh is allowed at this time!");
+  DrawBuffer *buf = new DrawBuffer;
+  buf->bind();
+  buf->setData(builtin_quad_data, 6, 20);
+  buf->attribute(DrawBuffer::Pos, 3, 0, DrawBuffer::Float);
+  buf->attribute(DrawBuffer::Te0, 2, 12, DrawBuffer::Float);
+  std::shared_ptr<DrawBuffer> b(buf);
+  meshes.insert(std::make_pair(model, b));
+  return b;
 }
 
 void Loader::addMaterial(std::string name, MaterialDef def) {
@@ -106,8 +114,16 @@ void Loader::buildMaterial(std::shared_ptr<Material> mat, std::pair<std::string,
     if(u.gl_id == -1)
       continue;
     u.type = i->second.type;
-    if(u.type == UniformDef::Texture)
+    switch(u.type) {
+    case UniformDef::Texture:
       u.value = loadTexture(boost::any_cast<std::string>(i->second.value));
+      break;
+    case UniformDef::Webview:
+      //TODO: web view support
+      break;
+    default:
+      break;
+    }
     mat->uniforms.push_back(u);
   }
 }

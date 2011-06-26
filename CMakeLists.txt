@@ -37,6 +37,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${PYTHON_INCLUDE_DIRS})
 
 SET(SENSE_pipeline_srcs
+  pipeline/Builtins.cpp
   pipeline/Drawbuffer.cpp
   pipeline/Loader.cpp
   pipeline/Material.cpp
@@ -48,10 +49,12 @@ SET(SENSE_pipeline_srcs
 )
 
 SET(SENSE_pipeline_hdrs
+  pipeline/Builtins.hpp
   pipeline/DefinitionTypes.hpp
   pipeline/Drawbuffer.hpp
   pipeline/Loader.hpp
   pipeline/Material.hpp
+  pipeline/Panel.hpp
   pipeline/Pipeline.hpp
   pipeline/RenderTarget.hpp
   pipeline/Texture.hpp
