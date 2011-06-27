@@ -20,6 +20,7 @@
 #include "Builtins.hpp"
 #include "Drawbuffer.hpp"
 #include "Material.hpp"
+#include "Webview.hpp"
 #include "GL/glew.h"
 #include "glexcept.hpp"
 #include "util/util.hpp"
@@ -119,7 +120,8 @@ void Loader::buildMaterial(std::shared_ptr<Material> mat, std::pair<std::string,
       u.value = loadTexture(boost::any_cast<std::string>(i->second.value));
       break;
     case UniformDef::Webview:
-      //TODO: web view support
+      u.type = UniformDef::Texture; // Webviews are a special class of texture, but the Pipeline doesn't need to know that!
+      u.value = loadWebview(boost::any_cast<std::string>(i->second.value));
       break;
     default:
       break;
@@ -133,6 +135,12 @@ std::shared_ptr<Texture> Loader::loadTexture(std::string path) {
   if(it != textures.end() && !it->second.expired())
     return it->second.lock();
   return std::shared_ptr<Texture>(); // TODO: create a texture object and add a job to the loader thread
+}
+
+std::shared_ptr<Texture> Loader::loadWebview(std::string path) {
+  boost::filesystem::path html_path = boost::filesystem::current_path() / "../data/html" / path;
+  Webview* w = new Webview("file://"+html_path.string(), 800, 600);
+  return std::shared_ptr<Texture>(w);
 }
 
 std::shared_ptr<GlShader> Loader::loadShader(std::string path, ShaderType type) {

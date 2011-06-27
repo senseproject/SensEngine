@@ -90,6 +90,7 @@ Pipeline::Pipeline() : loader_init_complete(false), loader_be_done(false), shado
   GL_CHECK(glEnable(GL_MULTISAMPLE))
   GL_CHECK(glEnable(GL_FRAMEBUFFER_SRGB))
   GL_CHECK(glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE))
+  GL_CHECK(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA))
   glClearColor(0.8f, 0.8f, 0.9f, 1.f);
 
   // Create our FBOs
@@ -192,6 +193,8 @@ void Pipeline::endFrame() {
   GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, default_framebuffer->gl_fboid)) // TODO: make sure we never need this here
   // first things first: we draw all the panels
   pushProjMat(glm::mat4(1.f));
+  GL_CHECK(glEnable(GL_BLEND));
+  GL_CHECK(glDisable(GL_SAMPLE_ALPHA_TO_COVERAGE))
   for(auto i = panels.begin(); i != panels.end(); ++i) {
     hPanel p = *i;
     p->buf->bind();
@@ -204,6 +207,8 @@ void Pipeline::endFrame() {
   // TODO: convert this blit into a tonemapping operation of some sort
   GL_CHECK(glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST))
   platformSwap();
+  GL_CHECK(glDisable(GL_BLEND));
+  GL_CHECK(glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE))
 }
 
 void Pipeline::setRenderTarget(hRenderTarget target) {
@@ -274,6 +279,7 @@ void Pipeline::destroyPanel(Pipeline::hPanel p) {
 int Pipeline::useMaterial(Pipeline::hMaterial mat) {
   GL_CHECK(glUseProgram(mat->program->gl_id))
   int mv_id;
+  unsigned int texunit = 0;
   for(auto i = mat->uniforms.begin(); i != mat->uniforms.end(); ++i) {
     if(i->gl_id == -1)
       continue;
@@ -283,6 +289,12 @@ int Pipeline::useMaterial(Pipeline::hMaterial mat) {
       break;
     case UniformDef::Projection:
       GL_CHECK(glUniformMatrix4fv(i->gl_id, 1, 0, glm::value_ptr(projection_stack[0])))
+      break;
+    case UniformDef::Texture:
+      GL_CHECK(glActiveTexture(GL_TEXTURE0+texunit))
+      GL_CHECK(glBindTexture(GL_TEXTURE_2D, boost::any_cast<hTexture>(i->value)->gl_texid))
+      GL_CHECK(glUniform1i(i->gl_id, texunit))
+      texunit++;
       break;
     default:
       throw std::runtime_error("Tried to use an unimplemented uniform type!");

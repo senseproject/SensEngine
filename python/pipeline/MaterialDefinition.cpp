@@ -117,6 +117,7 @@ static PyObject *PyMaterialDef_add_uniform(PyMaterialDef *self, PyObject *args, 
   UniformDef def;
   def.type = UniformDef::Type(itype);
   switch(def.type) {
+    case UniformDef::Webview:
     case UniformDef::Texture: {
       PyObject *bytes = PyUnicode_AsUTF8String(value);
       if(!bytes)

@@ -27,6 +27,7 @@ ENDIF(WIN32)
 FIND_PACKAGE(OpenGL REQUIRED)
 FIND_PACKAGE(Boost COMPONENTS filesystem system thread REQUIRED)
 FIND_PACKAGE(Python 3 REQUIRED)
+FIND_PACKAGE(Berkelium REQUIRED)
 
 ADD_DEFINITIONS(-DGLEW_STATIC)
 ADD_DEFINITIONS(-DBOOST_ALL_NO_LIB)
@@ -35,6 +36,7 @@ INCLUDE_DIRECTORIES("3rdparty/glew")
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${PYTHON_INCLUDE_DIRS})
+INCLUDE_DIRECTORIES(${BERKELIUM_INCLUDE_DIR})
 
 SET(SENSE_pipeline_srcs
   pipeline/Builtins.cpp
@@ -45,6 +47,7 @@ SET(SENSE_pipeline_srcs
   pipeline/Pipeline_${PLATFORM}.cpp
   pipeline/RenderTarget.cpp
   pipeline/Texture.cpp
+  pipeline/Webview.cpp
   3rdparty/glew/glew.c
 )
 
@@ -58,6 +61,7 @@ SET(SENSE_pipeline_hdrs
   pipeline/Pipeline.hpp
   pipeline/RenderTarget.hpp
   pipeline/Texture.hpp
+  pipeline/Webview.hpp
   3rdparty/glew/GL/glew.h
 )
 
@@ -91,6 +95,7 @@ SET(SENSE_link_libraries
   ${Boost_LIBRARIES}
   ${PYTHON_LIBRARY}
   ${PLATFORM_LIBRARIES}
+  ${BERKELIUM_LIBRARIES}
 )
 
 ADD_LIBRARY(SenseCore

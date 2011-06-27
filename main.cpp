@@ -15,6 +15,8 @@
 #include "python/module.hpp"
 #include "pipeline/Pipeline.hpp"
 
+#include <berkelium/Berkelium.hpp>
+
 void initClientModule(std::shared_ptr<Pipeline> p) {
   PyObject* SensModule = PyImport_ImportModule("SensEngine");
   PyObject* m = PyImport_AddModule("SensEngine.client");
@@ -30,6 +32,9 @@ struct DemoConsole : public Pipeline::KbdCallback {
 };
 
 int main(int argc, char **argv) {
+  if(!Berkelium::init(Berkelium::FileString::empty()))
+    throw std::runtime_error("Could not initialize Berkelium!");
+  
   std::shared_ptr<Pipeline> p = std::shared_ptr<Pipeline>(new Pipeline);
   p->pushKbdCallback(new DemoConsole);
   auto fsaa_level_iter = p->fsaaLevels().rbegin();
@@ -41,8 +46,9 @@ int main(int argc, char **argv) {
   PyImport_AppendInittab("SensEngine", initSensEngine);
   initClientModule(p);
   p->loader().loadMaterialFiles("../data/materials");
-  Pipeline::hPanel hud = p->createPanel(0.5f, 0.5f, "gui_hud");
+  Pipeline::hPanel hud = p->createPanel(1.f, 1.f, "gui_hud");
   for(;;) {
+    Berkelium::update();
     p->beginFrame();
     p->render();
     p->endFrame();

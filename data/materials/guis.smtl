@@ -18,7 +18,7 @@ def register_gui(guiname):
   m = MaterialDef()
   m.vertex_shader = "guiview"
   m.fragment_shader = "guiview"
-#  m.add_uniform(name="guitex", type=MaterialDef.Webview, value=guiname)
+  m.add_uniform(name="guitex", type=MaterialDef.Webview, value=guiname+".html")
   m.add_uniform(name="modelview", type=MaterialDef.ModelView)
   m.add_uniform(name="projection", type=MaterialDef.Projection);
   register_material("gui_"+guiname, m)

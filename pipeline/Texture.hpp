@@ -20,16 +20,17 @@
 
 class Texture {
 public:
-  ~Texture();
-private:
+  virtual ~Texture();
+protected:
+  Texture();
 
   unsigned int gl_texid;
   volatile unsigned int biggest_mip_loaded;
   std::string name;
-
-  Texture();
+  int hres, vres;
 
   friend class Pipeline;
+  friend class Loader;
 
 #ifndef _MSC_VER
   Texture(const Texture&) =delete;

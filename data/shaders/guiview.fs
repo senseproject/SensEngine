@@ -2,9 +2,8 @@ in vec2 vtexcoord;
 
 layout(location = SENSE_FRAG_OUTPUT_COL) out vec4 fcolor;
 
-// uniform sampler2D guitex;
+uniform sampler2D guitex;
 
 void main(void) {
-  // fcolor = vec4(texture(guitex, vtexcoord).rgb, 1.0);
-  fcolor = vec4(vtexcoord, 0.0, 1.0);
+  fcolor = texture(guitex, vtexcoord);
 }

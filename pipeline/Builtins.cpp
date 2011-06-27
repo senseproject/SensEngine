@@ -72,11 +72,11 @@ short builtin_missing_idx_count = 36;
 
 float builtin_quad_data[] = {
   // Data for a screen-aligned quad
-  -1.f, -1.f, 0.f, 0.f, 0.f,
-  -1.f, 1.f, 0.f, 0.f, 1.f,
-  1.f, 1.f, 0.f, 1.f, 1.f,
+  -1.f, -1.f, 0.f, 0.f, 1.f,
+  -1.f, 1.f, 0.f, 0.f, 0.f,
+  1.f, 1.f, 0.f, 1.f, 0.f,
 
-  -1.f, -1.f, 0.f, 0.f, 0.f,
-  1.f, 1.f, 0.f, 1.f, 1.f,
-  1.f, -1.f, 0.f, 1.f, 0.f,
+  -1.f, -1.f, 0.f, 0.f, 1.f,
+  1.f, 1.f, 0.f, 1.f, 0.f,
+  1.f, -1.f, 0.f, 1.f, 1.f,
 };
