@@ -44,9 +44,6 @@ void Loader::init() {
   ss << std::endl;
   shader_header = ss.str();
 
-  tex_not_loaded = loadTexture("__MISSING__");
-  object_not_loaded = loadMesh("__MISSING__");
-
   MaterialDef m;
   m.shaders.frag = "guiview"; // maybe we should rename this shader to something more general :P
   m.shaders.vert = "guiview";
@@ -79,6 +76,8 @@ std::shared_ptr<Material> Loader::loadMaterial(std::string material) {
     buildMaterial(mat, *i);
     materials.insert(std::make_pair(material, mat));
   }
+  if(!mat)
+   mat = loadMaterial("__MISSING__");
   return mat;
 }
 
@@ -106,8 +105,7 @@ std::shared_ptr<DrawBuffer> Loader::loadMesh(std::string model) {
     meshes.insert(std::make_pair(model, b));
     return b;
   } else
-    throw std::runtime_error(model+" cannot be loaded. It's not a builtin!");
-  return std::shared_ptr<DrawBuffer>();
+    return loadMesh("__MISSING__");
 }
 
 void Loader::addMaterial(std::string name, MaterialDef def) {
@@ -174,11 +172,10 @@ std::shared_ptr<Texture> Loader::loadTexture(std::string path) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     std::shared_ptr<Texture> tex(t);
     textures.insert(std::make_pair(path, tex));
-    tex_not_loaded = tex;
     return tex;
   }
 
-  return tex_not_loaded; // TODO: create a texture object and add a job to the loader thread
+  return loadTexture("__MISSING__");
 }
 
 std::shared_ptr<Texture> Loader::loadWebview(std::string path) {
