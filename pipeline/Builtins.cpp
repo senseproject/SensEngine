@@ -53,7 +53,7 @@ float builtin_missing_data[] = {
   1.f, -1.f, 1.f, 1.f, 0.f,
 };
 
-short builtin_missing_indices[] = {
+unsigned short builtin_missing_indices[] = {
   0, 1, 2,
   0, 2, 3,
   4, 5, 6,
@@ -68,7 +68,7 @@ short builtin_missing_indices[] = {
   20, 22, 23
 };
 
-short builtin_missing_idx_count = 36;
+unsigned short builtin_missing_idx_count = 36;
 
 float builtin_quad_data[] = {
   // Data for a screen-aligned quad
@@ -79,4 +79,9 @@ float builtin_quad_data[] = {
   -1.f, -1.f, 0.f, 0.f, 1.f,
   1.f, 1.f, 0.f, 1.f, 0.f,
   1.f, -1.f, 0.f, 1.f, 1.f,
+};
+
+unsigned char builtin_missingtex_data[] = {
+  0xAA, 0xAA, 0xAA, 0xFF, 0x55, 0x55, 0x55, 0xFF,
+  0x55, 0x55, 0x55, 0xFF, 0xAA, 0xAA, 0xAA, 0xFF
 };

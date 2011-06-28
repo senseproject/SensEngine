@@ -54,6 +54,8 @@ private:
   std::unordered_map<ShaderKey, std::weak_ptr<ShaderProgram>> programs;
   std::unordered_map<std::string, std::weak_ptr<GlShader>> shaders;
   std::unordered_map<std::string, std::weak_ptr<Texture>> textures;
+  std::shared_ptr<Texture> tex_not_loaded;
+  std::shared_ptr<DrawBuffer> object_not_loaded;
 
   void init();
   void run();

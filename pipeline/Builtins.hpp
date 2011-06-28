@@ -16,9 +16,11 @@
 #define SENSE_PIPELINE_BUILTINS_HPP
 
 extern float builtin_missing_data[];
-extern short builtin_missing_indices[];
-extern short builtin_missing_idx_count;
+extern unsigned short builtin_missing_indices[];
+extern unsigned short builtin_missing_idx_count;
 
 extern float builtin_quad_data[];
+
+extern unsigned char builtin_missingtex_data[];
 
 #endif // SENSE_PIPELINE_BUILTINS_HPP

@@ -43,6 +43,22 @@ void Loader::init() {
   ss << "#define SENSE_FRAG_OUTPUT_NOR 1" << std::endl;
   ss << std::endl;
   shader_header = ss.str();
+
+  tex_not_loaded = loadTexture("__MISSING__");
+  object_not_loaded = loadMesh("__MISSING__");
+
+  MaterialDef m;
+  m.shaders.frag = "guiview"; // maybe we should rename this shader to something more general :P
+  m.shaders.vert = "guiview";
+  UniformDef u;
+  u.type = UniformDef::ModelView;
+  m.uniforms.insert(std::make_pair("modelview", u));
+  u.type = UniformDef::Projection;
+  m.uniforms.insert(std::make_pair("projection", u));
+  u.type = UniformDef::Texture;
+  u.value = std::string("__MISSING__");
+  m.uniforms.insert(std::make_pair("guitex", u));
+  material_defs.insert(std::make_pair("__MISSING__", m));
 }
 
 void Loader::run() {
@@ -70,16 +86,28 @@ std::shared_ptr<DrawBuffer> Loader::loadMesh(std::string model) {
   auto it = meshes.find(model);
   if(it != meshes.end() && !it->second.expired())
     return it->second.lock();
-  if(model != "__quad__")
-    throw std::runtime_error("Only the builtin quad mesh is allowed at this time!");
-  DrawBuffer *buf = new DrawBuffer;
-  buf->bind();
-  buf->setData(builtin_quad_data, 6, 20);
-  buf->attribute(DrawBuffer::Pos, 3, 0, DrawBuffer::Float);
-  buf->attribute(DrawBuffer::Te0, 2, 12, DrawBuffer::Float);
-  std::shared_ptr<DrawBuffer> b(buf);
-  meshes.insert(std::make_pair(model, b));
-  return b;
+  if(model == "__quad__") {
+    DrawBuffer *buf = new DrawBuffer;
+    buf->bind();
+    buf->setData(builtin_quad_data, 6, 20);
+    buf->attribute(DrawBuffer::Pos, 3, 0, DrawBuffer::Float);
+    buf->attribute(DrawBuffer::Te0, 2, 12, DrawBuffer::Float);
+    std::shared_ptr<DrawBuffer> b(buf);
+    meshes.insert(std::make_pair(model, b));
+    return b;
+  } else if (model == "__MISSING__") {
+    IndexedDrawBuffer *buf = new IndexedDrawBuffer;
+    buf->bind();
+    buf->setData(builtin_missing_data, 24, 20);
+    buf->attribute(DrawBuffer::Pos, 3, 0, DrawBuffer::Float);
+    buf->attribute(DrawBuffer::Te0, 2, 12, DrawBuffer::Float);
+    buf->setIndices(builtin_missing_indices, builtin_missing_idx_count, DrawBuffer::UShort);
+    std::shared_ptr<DrawBuffer> b(buf);
+    meshes.insert(std::make_pair(model, b));
+    return b;
+  } else
+    throw std::runtime_error(model+" cannot be loaded. It's not a builtin!");
+  return std::shared_ptr<DrawBuffer>();
 }
 
 void Loader::addMaterial(std::string name, MaterialDef def) {
@@ -134,7 +162,23 @@ std::shared_ptr<Texture> Loader::loadTexture(std::string path) {
   auto it = textures.find(path);
   if(it != textures.end() && !it->second.expired())
     return it->second.lock();
-  return std::shared_ptr<Texture>(); // TODO: create a texture object and add a job to the loader thread
+  if(path == "__MISSING__") {
+    Texture *t = new Texture;
+    t->name = path;
+    t->hres = 2;
+    t->vres = 2;
+    t->biggest_mip_loaded = 0;
+    glBindTexture(GL_TEXTURE_2D, t->gl_texid);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 2, 2, 0, GL_RGBA, GL_UNSIGNED_BYTE, builtin_missingtex_data);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    std::shared_ptr<Texture> tex(t);
+    textures.insert(std::make_pair(path, tex));
+    tex_not_loaded = tex;
+    return tex;
+  }
+
+  return tex_not_loaded; // TODO: create a texture object and add a job to the loader thread
 }
 
 std::shared_ptr<Texture> Loader::loadWebview(std::string path) {

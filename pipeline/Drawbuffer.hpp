@@ -80,8 +80,9 @@ protected:
 };
 
 class IndexedDrawBuffer: public DrawBuffer {
+public:
   virtual ~IndexedDrawBuffer();
-
+private:
   virtual void draw(unsigned int count=1);
   void setIndices(void* data, size_t num_indices, AttribType type, bool stream=false);
 
@@ -102,6 +103,8 @@ class IndexedDrawBuffer: public DrawBuffer {
   IndexedDrawBuffer(const IndexedDrawBuffer&);
   IndexedDrawBuffer& operator=(const IndexedDrawBuffer&);
 #endif
+
+  friend class Loader;
 };
 
 #endif // SENSE_PIPELINE_DRAWBUFFER_HPP
