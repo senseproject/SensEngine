@@ -17,8 +17,8 @@ from SensEngine import MaterialDef
 
 def register_material(name, mat):
     try:
-        SensEngine.client.pipeline.register_material(mat, name)
+        SensEngine.client.loader.add_material(mat, name)
         return None
-    except NameError: # we want to forward any errors that might have come from the pipeline
+    except AttributeError: # we want to forward any errors that might have come from the pipeline
         pass
     raise NotImplementedError("Don't understand this context; can't register materials")

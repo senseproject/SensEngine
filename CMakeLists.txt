@@ -18,10 +18,14 @@ ENDIF(MSVC)
 
 IF(WIN32)
   SET(PLATFORM "w32")
+  SET(PIPELINE "ogl")
+  SET(SENSE_platform_srcs 3rdparty/glew/glew.c)
 ELSE(WIN32)
   SET(PLATFORM "x11")
+  SET(PIPELINE "ogl")
   FIND_PACKAGE(X11 REQUIRED)
   SET(PLATFORM_LIBRARIES ${X11_LIBRARIES})
+  SET(SENSE_platform_srcs 3rdparty/glew/glew.c)
 ENDIF(WIN32)
 
 FIND_PACKAGE(OpenGL REQUIRED)
@@ -37,32 +41,32 @@ INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${PYTHON_INCLUDE_DIRS})
 INCLUDE_DIRECTORIES(${BERKELIUM_INCLUDE_DIR})
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+
+INCLUDE(SenseConfig)
+
+CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/client/Client_config.in.cpp ${CMAKE_CURRENT_BINARY_DIR}/client/Client_config.cpp)
+
+ADD_SUBDIRECTORY(pipeline/${PIPELINE})
+
+SET(SENSE_client_srcs
+  client/Client.cpp
+  client/Client_${PLATFORM}_${PIPELINE}.cpp
+  ${CMAKE_CURRENT_BINARY_DIR}/client/Client_config.cpp
+)
+
+SET(SENSE_client_hdrs
+  client/Client.hpp
+)
 
 SET(SENSE_pipeline_srcs
   pipeline/Builtins.cpp
-  pipeline/Drawbuffer.cpp
-  pipeline/Loader.cpp
-  pipeline/Material.cpp
-  pipeline/Pipeline.cpp
-  pipeline/Pipeline_${PLATFORM}.cpp
-  pipeline/RenderTarget.cpp
-  pipeline/Texture.cpp
-  pipeline/Webview.cpp
-  3rdparty/glew/glew.c
 )
 
 SET(SENSE_pipeline_hdrs
+  pipeline/interface.hpp
+  pipeline/Drawable.hpp
   pipeline/Builtins.hpp
-  pipeline/DefinitionTypes.hpp
-  pipeline/Drawbuffer.hpp
-  pipeline/Loader.hpp
-  pipeline/Material.hpp
-  pipeline/Panel.hpp
-  pipeline/Pipeline.hpp
-  pipeline/RenderTarget.hpp
-  pipeline/Texture.hpp
-  pipeline/Webview.hpp
-  3rdparty/glew/GL/glew.h
 )
 
 SET(SENSE_python_srcs
@@ -70,8 +74,8 @@ SET(SENSE_python_srcs
 )
 
 SET(SENSE_python_pipeline_srcs
+  python/pipeline/Loader.cpp
   python/pipeline/MaterialDefinition.cpp
-  python/pipeline/Pipeline.cpp
 )
 
 SET(SENSE_python_pipeline_hdrs
@@ -91,6 +95,8 @@ SET(SENSE_util_hdrs
 
 SET(SENSE_link_libraries
   SenseCore
+  SensePipe
+  SenseCore
   ${OPENGL_gl_LIBRARY}
   ${Boost_LIBRARIES}
   ${PYTHON_LIBRARY}
@@ -99,6 +105,7 @@ SET(SENSE_link_libraries
 )
 
 ADD_LIBRARY(SenseCore
+            ${SENSE_platform_srcs}
             ${SENSE_pipeline_srcs} ${SENSE_pipeline_hdrs}
             ${SENSE_python_srcs} ${SENSE_python_hdrs}
             ${SENSE_python_pipeline_srcs} ${SENSE_python_pipeline_hdrs}
@@ -108,7 +115,7 @@ IF(CMAKE_COMPILER_IS_GNUCXX)
   SET_TARGET_PROPERTIES(SenseCore PROPERTIES COMPILE_FLAGS "-fPIC" LINK_FLAGS "-fPIC")
 ENDIF(CMAKE_COMPILER_IS_GNUCXX)
 
-ADD_EXECUTABLE(SensEngine main.cpp)
+ADD_EXECUTABLE(SensEngine main.cpp ${SENSE_client_srcs} ${SENSE_client_hdrs})
 TARGET_LINK_LIBRARIES(SensEngine ${SENSE_link_libraries})
 
 ADD_LIBRARY(PySensEngine SHARED pysense.cpp)

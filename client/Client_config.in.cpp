@@ -12,13 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "GL/glew.h"
-#include "Material.hpp"
+#include "client/Client.hpp"
 
-GlShader::~GlShader() {
-  if(gl_id) glDeleteShader(gl_id);
-}
-
-ShaderProgram::~ShaderProgram() {
-  if(gl_id) glDeleteProgram(gl_id);
+const char* SenseClient::displayName()
+{
+  return "${SENSE_CLIENT_DISPLAY_NAME}";
 }

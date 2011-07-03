@@ -12,41 +12,49 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <python/module.hpp>
+#include "python/module.hpp"
+
+#include "implementation.hpp"
+#include "../interface.hpp"
+#include "../Drawable.hpp"
+#include "../Builtins.hpp"
+#include "glexcept.hpp"
+#include "Webview.hpp"
+
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
+#include <sstream>
 
-#include "Loader.hpp"
-#include "Builtins.hpp"
-#include "Drawbuffer.hpp"
-#include "Material.hpp"
-#include "Webview.hpp"
-#include "GL/glew.h"
-#include "glexcept.hpp"
-#include "util/util.hpp"
+Texture::~Texture()
+{}
 
-void Loader::init() {
+Loader::Loader(SenseClient* client)
+  : self(new LoaderImpl)
+{
+  self->finished = false;
+  self->client = client;
+
   std::stringstream ss;
   unsigned int num_instances = 64; // TODO: fetch from config system
   ss << "#version 150" << std::endl;
   ss << "#extension GL_ARB_explicit_attrib_location : require" << std::endl;
   ss << "#define SENSE_MAX_INSTANCES " << num_instances << std::endl;
-  ss << "#define SENSE_VERT_INPUT_POS " << DrawBuffer::Pos << std::endl;
-  ss << "#define SENSE_VERT_INPUT_NOR " << DrawBuffer::Nor << std::endl;
-  ss << "#define SENSE_VERT_INPUT_TAN " << DrawBuffer::Tan << std::endl;
-  ss << "#define SENSE_VERT_INPUT_COL " << DrawBuffer::Col << std::endl;
-  ss << "#define SENSE_VERT_INPUT_TE0 " << DrawBuffer::Te0 << std::endl;
-  ss << "#define SENSE_VERT_INPUT_TE1 " << DrawBuffer::Te1 << std::endl;
-  ss << "#define SENSE_VERT_INPUT_SKINIDX " << DrawBuffer::SkinIdx << std::endl;
-  ss << "#define SENSE_VERT_INPUT_SKINWEIGHT " << DrawBuffer::SkinWeight << std::endl;
+  ss << "#define SENSE_VERT_INPUT_POS " << Drawable::Pos << std::endl;
+  ss << "#define SENSE_VERT_INPUT_NOR " << Drawable::Nor << std::endl;
+  ss << "#define SENSE_VERT_INPUT_TAN " << Drawable::Tan << std::endl;
+  ss << "#define SENSE_VERT_INPUT_COL " << Drawable::Col << std::endl;
+  ss << "#define SENSE_VERT_INPUT_TE0 " << Drawable::Te0 << std::endl;
+  ss << "#define SENSE_VERT_INPUT_TE1 " << Drawable::Te1 << std::endl;
+  ss << "#define SENSE_VERT_INPUT_SKINIDX " << Drawable::SkinIdx << std::endl;
+  ss << "#define SENSE_VERT_INPUT_SKINWEIGHT " << Drawable::SkinWeight << std::endl;
   ss << "#define SENSE_FRAG_OUTPUT_COL 0" << std::endl;
   ss << "#define SENSE_FRAG_OUTPUT_NOR 1" << std::endl;
   ss << std::endl;
-  shader_header = ss.str();
+  self->shader_header = ss.str();
 
   MaterialDef m;
-  m.shaders.frag = "guiview"; // maybe we should rename this shader to something more general :P
   m.shaders.vert = "guiview";
+  m.shaders.frag = "guiview";
   UniformDef u;
   u.type = UniformDef::ModelView;
   m.uniforms.insert(std::make_pair("modelview", u));
@@ -55,67 +63,24 @@ void Loader::init() {
   u.type = UniformDef::Texture;
   u.value = std::string("__MISSING__");
   m.uniforms.insert(std::make_pair("guitex", u));
-  material_defs.insert(std::make_pair("__MISSING__", m));
+  addMaterial(m, "__MISSING__");
 }
 
-void Loader::run() {
-}
+Loader::~Loader()
+{}
 
-void Loader::cleanup() {
-}
-
-std::shared_ptr<Material> Loader::loadMaterial(std::string material) {
-  auto it = materials.find(material);
-  if(it != materials.end() && !it->second.expired())
-    return it->second.lock();
-
-  auto i = material_defs.find(material);
-  std::shared_ptr<Material> mat;
-  if(i != material_defs.end()) {
-    mat = std::shared_ptr<Material>(new Material);
-    buildMaterial(mat, *i);
-    materials.insert(std::make_pair(material, mat));
+void Loader::addMaterial(MaterialDef m, std::string n)
+{
+  auto i = self->material_defs.insert(std::make_pair(n, m));
+  auto it = self->materials.find(n);
+  if(it != self->materials.end()) {
+    self->cleanupMaterial(it->second);
+    self->buildMaterial(it->second, *(i.first));
   }
-  if(!mat)
-   mat = loadMaterial("__MISSING__");
-  return mat;
 }
 
-std::shared_ptr<DrawBuffer> Loader::loadMesh(std::string model) {
-  auto it = meshes.find(model);
-  if(it != meshes.end() && !it->second.expired())
-    return it->second.lock();
-  if(model == "__quad__") {
-    DrawBuffer *buf = new DrawBuffer;
-    buf->bind();
-    buf->setData(builtin_quad_data, 6, 20);
-    buf->attribute(DrawBuffer::Pos, 3, 0, DrawBuffer::Float);
-    buf->attribute(DrawBuffer::Te0, 2, 12, DrawBuffer::Float);
-    std::shared_ptr<DrawBuffer> b(buf);
-    meshes.insert(std::make_pair(model, b));
-    return b;
-  } else if (model == "__MISSING__") {
-    IndexedDrawBuffer *buf = new IndexedDrawBuffer;
-    buf->bind();
-    buf->setData(builtin_missing_data, 24, 20);
-    buf->attribute(DrawBuffer::Pos, 3, 0, DrawBuffer::Float);
-    buf->attribute(DrawBuffer::Te0, 2, 12, DrawBuffer::Float);
-    buf->setIndices(builtin_missing_indices, builtin_missing_idx_count, DrawBuffer::UShort);
-    std::shared_ptr<DrawBuffer> b(buf);
-    meshes.insert(std::make_pair(model, b));
-    return b;
-  } else
-    return loadMesh("__MISSING__");
-}
-
-void Loader::addMaterial(std::string name, MaterialDef def) {
-  auto i = material_defs.insert(std::make_pair(name, def));
-  auto it = materials.find(name);
-  if(it != materials.end() && !it->second.expired())
-      buildMaterial(it->second.lock(), *(i.first));
-}
-
-void Loader::loadMaterialFiles(boost::filesystem::path dir) {
+void Loader::loadMaterialFiles(boost::filesystem::path dir)
+{
   if(!exists(dir)) return;
   PyObject* old_path = appendSysPath(dir.string().c_str(), true);
 
@@ -131,8 +96,17 @@ void Loader::loadMaterialFiles(boost::filesystem::path dir) {
   restoreSysPath(old_path);
 }
 
+void Loader::exec()
+{
+  while (!self->finished);
+}
 
-void Loader::buildMaterial(std::shared_ptr<Material> mat, std::pair<std::string, MaterialDef> matdef) {
+void Loader::finish()
+{
+  self->finished = true;  
+}
+
+void LoaderImpl::buildMaterial(Material* mat, std::pair<std::string, MaterialDef> matdef) {
   mat->program = loadProgram(matdef.second.shaders);
   GL_CHECK(glUseProgram(mat->program->gl_id))
   for(auto i = matdef.second.uniforms.begin(); i != matdef.second.uniforms.end(); ++i) {
@@ -156,50 +130,57 @@ void Loader::buildMaterial(std::shared_ptr<Material> mat, std::pair<std::string,
   }
 }
 
-std::shared_ptr<Texture> Loader::loadTexture(std::string path) {
+Texture* LoaderImpl::loadTexture(std::string path) {
   auto it = textures.find(path);
-  if(it != textures.end() && !it->second.expired())
-    return it->second.lock();
+  if(it != textures.end()) {
+    it->second->refcnt++;
+    return it->second;
+  }
+  
   if(path == "__MISSING__") {
     Texture *t = new Texture;
+    t->refcnt = 1;
     t->name = path;
     t->hres = 2;
     t->vres = 2;
     t->biggest_mip_loaded = 0;
-    glBindTexture(GL_TEXTURE_2D, t->gl_texid);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 2, 2, 0, GL_RGBA, GL_UNSIGNED_BYTE, builtin_missingtex_data);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    std::shared_ptr<Texture> tex(t);
-    textures.insert(std::make_pair(path, tex));
-    return tex;
+    GL_CHECK(glGenTextures(1, &(t->gl_id)));
+    GL_CHECK(glBindTexture(GL_TEXTURE_2D, t->gl_id));
+    GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 2, 2, 0, GL_RGBA, GL_UNSIGNED_BYTE, builtin_missingtex_data));
+    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
+    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+    textures.insert(std::make_pair(path, t));
+    return t;
   }
 
   return loadTexture("__MISSING__");
 }
 
-std::shared_ptr<Texture> Loader::loadWebview(std::string path) {
+Texture* LoaderImpl::loadWebview(std::string path) {
   boost::filesystem::path html_path = boost::filesystem::current_path() / "../data/html" / path;
   Webview* w = new Webview("file://"+html_path.string(), 800, 600);
-  return std::shared_ptr<Texture>(w);
+  return w;
 }
 
-std::shared_ptr<GlShader> Loader::loadShader(std::string path, ShaderType type) {
+GlShader* LoaderImpl::loadShader(std::string path, GlShader::Type type) {
   if(path.empty())
-    return std::shared_ptr<GlShader>();
+    return NULL;
 
   auto it = shaders.find(path);
-  if(it != shaders.end() && !it->second.expired())
-    return it->second.lock();
+  if(it != shaders.end()) {
+    it->second->refcnt++;
+    return it->second;
+  }
 
   GLenum gl_shader_type;
   switch(type) {
-    case Vertex: gl_shader_type = GL_VERTEX_SHADER; break;
-    case Fragment: gl_shader_type = GL_FRAGMENT_SHADER; break;
-    case Geometry: gl_shader_type = GL_GEOMETRY_SHADER; break;
+  case GlShader::Vertex: gl_shader_type = GL_VERTEX_SHADER; break;
+  case GlShader::Fragment: gl_shader_type = GL_FRAGMENT_SHADER; break;
+  case GlShader::Geometry: gl_shader_type = GL_GEOMETRY_SHADER; break;
   }
 
   GlShader* shader = new GlShader;
+  shader->refcnt = 1;
   shader->gl_id = GL_CHECK(glCreateShader(gl_shader_type))
   boost::filesystem::ifstream stream;
   stream.exceptions(std::ifstream::badbit | std::ifstream::failbit | std::ifstream::eofbit);
@@ -226,28 +207,36 @@ std::shared_ptr<GlShader> Loader::loadShader(std::string path, ShaderType type) 
     throw std::runtime_error("Error compiling shader " + shader_path.string() + ":\n" + infolog);
   }
   
-  return std::shared_ptr<GlShader>(shader);
+  return shader;
 }
 
-std::shared_ptr<ShaderProgram> Loader::loadProgram(ShaderKey key) {
+ShaderProgram* LoaderImpl::loadProgram(ShaderKey key) {
   auto it = programs.find(key);
-  if(it != programs.end() && !it->second.expired())
-    return it->second.lock();
-  std::shared_ptr<ShaderProgram> prog = std::shared_ptr<ShaderProgram>(new ShaderProgram);
+  if(it != programs.end()) {
+    it->second->refcnt++;
+    return it->second;
+  }
+  
+  ShaderProgram* prog = new ShaderProgram;
+  prog->refcnt = 1;
   prog->gl_id = GL_CHECK(glCreateProgram())
   if(!key.frag.empty())
-    prog->frag = loadShader(key.frag+".fs", Fragment);
+    prog->frag = loadShader(key.frag+".fs", GlShader::Fragment);
   else
     throw std::runtime_error("Programs must have at least a vertex and fragment shader (missing fragment)");
   if(!key.vert.empty())
-    prog->vert = loadShader(key.vert+".vs", Vertex);
+    prog->vert = loadShader(key.vert+".vs", GlShader::Vertex);
   else
     throw std::runtime_error("Programs must have at least a vertex and fragment shader (missing vertex)");
   if(!key.geom.empty())
-    prog->geom = loadShader(key.geom+".gs", Geometry);
+    prog->geom = loadShader(key.geom+".gs", GlShader::Geometry);
   GL_CHECK(glAttachShader(prog->gl_id, prog->vert->gl_id))
-  if(prog->geom)
+  if (prog->geom) {
+    prog->geom->refcnt++;
     GL_CHECK(glAttachShader(prog->gl_id, prog->geom->gl_id))
+  }
+  prog->vert->refcnt++;
+  prog->frag->refcnt++;
   GL_CHECK(glAttachShader(prog->gl_id, prog->frag->gl_id))
   GL_CHECK(glLinkProgram(prog->gl_id))
   int link_status;
@@ -263,4 +252,15 @@ std::shared_ptr<ShaderProgram> Loader::loadProgram(ShaderKey key) {
   }
   programs.insert(std::make_pair(key, prog));
   return prog;
+}
+
+void LoaderImpl::cleanupMaterial(Material* mat) 
+{
+  // This function intentionally does very little. Programs and
+  // Textures are left around until memory is needed
+  mat->program->refcnt--;
+  for(auto i = mat->uniforms.begin(); i != mat->uniforms.end(); ++i) {
+    if (i->type == UniformDef::Texture)
+      boost::any_cast<Texture*>(i->value)->refcnt--;
+  }
 }

@@ -12,14 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "Texture.hpp"
+struct PyLoader {
+  PyObject_HEAD;
+  Loader* loader;
+};
 
-#include "GL/glew.h"
-
-Texture::Texture() {
-  glGenTextures(1, &gl_texid);
-}
-
-Texture::~Texture() {
-  glDeleteTextures(1, &gl_texid);
-}
+extern PyObject* PyLoader_create(Loader*);

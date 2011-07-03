@@ -1,0 +1,1 @@
+SET(SENSE_CLIENT_DISPLAY_NAME "SensEngine Demo")

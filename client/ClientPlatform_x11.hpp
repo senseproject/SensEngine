@@ -12,19 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef SENSE_PIPELINE_PANEL_HPP
-#define SENSE_PIPELINE_PANEL_HPP
+#include "GL/glew.h"
+#include <GL/glx.h>
+#include <GL/glxext.h>
+#include "X11/Xlib.h"
 
-#include <memory>
-#include "3rdparty/glm/glm.hpp"
+struct ClientPlatform
+{
+  Window win;
+  Display *dpy;
+  GLXContext ctx;
+  Colormap cmap;
 
-class Material;
-class DrawBuffer;
-
-struct Panel {
-  std::shared_ptr<Material> mat;
-  std::shared_ptr<DrawBuffer> buf;
-  glm::mat4 matrix;
+  Display *loader_dpy;
+  GLXPbuffer loader_pb;
+  GLXContext loader_ctx;
 };
 
-#endif // SENSE_PIPELINE_PANEL_HPP

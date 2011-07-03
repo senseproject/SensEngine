@@ -14,13 +14,18 @@
 
 #include "python/module.hpp"
 #include "python/pywarnings.hpp"
-#include "pipeline/Pipeline.hpp"
+#include "pipeline/interface.hpp"
 
 #include "PyMaterialDef.hpp"
+#include "PyLoader.hpp"
 
-typedef PySharedPtr<Pipeline> PyPipeline;
+static PyObject * Loader_new(PyTypeObject*, PyObject*, PyObject*) 
+{
+  PyErr_SetString(PyExc_TypeError, "Loader objects cannot be created by python code");
+  return NULL;
+}
 
-PyObject *PyPipeline_register_material(PyObject *self, PyObject *args) {
+static PyObject *PyLoader_add_material(PyObject *self, PyObject *args) {
   PyMaterialDef *MaterialDef;
   PyObject *MaterialName;
   if(!PyArg_ParseTuple(args, "OU", &MaterialDef, &MaterialName))
@@ -34,38 +39,44 @@ PyObject *PyPipeline_register_material(PyObject *self, PyObject *args) {
     return 0;
   }
   char *val = PyBytes_AsString(bytes);
-  getPyPtr<Pipeline>(self)->loader().addMaterial(std::string(val), MaterialDef->def);
+  ((PyLoader*)self)->loader->addMaterial(MaterialDef->def, val);
   Py_DECREF(bytes);
   Py_RETURN_NONE;
 }
 
-static PyMethodDef PyPipeline_methods[] = {
-  {"register_material", PyPipeline_register_material, METH_VARARGS, "Add (or replace) a material definition on this renderer object"},
+static PyMethodDef PyLoader_methods[] = {
+  {"add_material", PyLoader_add_material, METH_VARARGS, "Add (or replace) a material definition"},
   {0, 0, 0, 0}
 };
 
-template <>
-PyTypeObject PyPipeline::type = {
+PyTypeObject PyLoader_Type = {
   PyObject_HEAD_INIT(0)
-  "SensEngine.Pipeline",
-  sizeof(PyPipeline),
+  "SensEngine.Loader",
+  sizeof(PyLoader),
   0,
-  (destructor)PyPipeline::dealloc,
+  0,
   0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 0,
   Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
-  "Pipeline interface. No actual rendering interfaces are exposed, just management (like materials and cameras)",
+  "SensEngine data loader",
   0, 0, 0, 0, 0, 0,
-  PyPipeline_methods,
-  0, 0, 0, 0, 0, 0, 0,
-  PyPipeline::init,
-  0,
-  PyPipeline::_new
+  PyLoader_methods,
+  0, 0, 0, 0, 0,
+  0, 0, 0, 0,
+  Loader_new
 };
 
-void initPipeline(PyObject *m) {
-  if(PyType_Ready(&PyPipeline::type) < 0)
+void initLoader(PyObject* m)
+{
+  if(PyType_Ready(&PyLoader_Type) < 0)
     return;
-  Py_INCREF((PyObject*)&PyPipeline::type);
-  PyModule_AddObject(m, "Pipeline", (PyObject*)&PyPipeline::type);
+  Py_INCREF(&PyLoader_Type);
+  PyModule_AddObject(m, "Loader", (PyObject*)&PyLoader_Type);
+}
+
+PyObject* PyLoader_create(Loader* l)
+{
+  PyLoader* loader = (PyLoader*)PyLoader_Type.tp_alloc(&PyLoader_Type, 0);
+  loader->loader = l;
+  return (PyObject*)loader;
 }

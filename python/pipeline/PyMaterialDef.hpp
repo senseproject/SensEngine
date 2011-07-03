@@ -14,5 +14,5 @@
 
 struct PyMaterialDef {
   PyObject_HEAD
-    MaterialDef def;
+  MaterialDef def;
 };

@@ -25,7 +25,8 @@
 #include "glexcept.hpp"
 
 Webview::Webview(std::string page, int w, int h) {
-  GL_CHECK(glBindTexture(GL_TEXTURE_2D, gl_texid))
+  GL_CHECK(glGenTextures(1, &gl_id))
+  GL_CHECK(glBindTexture(GL_TEXTURE_2D, gl_id))
   unsigned int black = 0x00000000;
   GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, &black))
   GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST))
@@ -50,7 +51,7 @@ Webview::~Webview() {
 }
 
 void Webview::onPaint(Berkelium::Window *wini, const unsigned char *bitmap_in, const Berkelium::Rect &bitmap_rect, size_t num_copy_rects, const Berkelium::Rect *copy_rects, int dx, int dy, const Berkelium::Rect &scroll_rect) {
-  GL_CHECK(glBindTexture(GL_TEXTURE_2D, gl_texid))
+  GL_CHECK(glBindTexture(GL_TEXTURE_2D, gl_id))
   if(needs_full_refresh) {
     if(bitmap_rect.left() != 0 || bitmap_rect.top() != 0 || bitmap_rect.right() != hres || bitmap_rect.bottom() != vres)
       return;

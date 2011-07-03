@@ -15,7 +15,7 @@
 #ifndef SENSE_PIPELINE_WEBVIEW_HPP
 #define SENSE_PIPELINE_WEBVIEW_HPP
 
-#include "Texture.hpp"
+#include "implementation.hpp"
 #include <berkelium/WindowDelegate.hpp>
 
 namespace Berkelium {
