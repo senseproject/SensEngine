@@ -28,6 +28,8 @@ struct Lamp;
 struct LoaderImpl;
 struct PipelineImpl;
 
+struct DrawableMesh;
+
 class SenseClient;
 
 class Loader
@@ -37,7 +39,7 @@ public:
   ~Loader();
 
   // Load the mesh of the given name into a GPU buffer object
-  DrawBuffer* loadMesh(std::string name);
+  DrawBuffer* loadMesh(DrawableMesh*);
   void releaseMesh(DrawBuffer*);
 
   // Load the textures and shaders associated with the given material

@@ -16,7 +16,7 @@
 #define SENSE_PIPELINE_DRAWABLE_HPP
 
 
-struct Drawable {
+struct DrawableMesh {
   enum AttribType {
     Byte,
     UByte,
