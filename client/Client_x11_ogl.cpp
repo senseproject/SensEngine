@@ -259,16 +259,8 @@ bool SenseClient::platformEventLoop()
         }
         break;
       case ConfigureNotify: {
-        uint32_t nwidth = xevt.xconfigure.width;
-        uint32_t nheight = xevt.xconfigure.height;
-        if(nwidth != m_width || nheight != m_height) {
-          m_width = nwidth;
-          m_height = nheight;
-          m_pipeline->destroyRenderTarget(framebuffer);
-          framebuffer = m_pipeline->createRenderTarget(width(), height(), false);
-          GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, 0));
-          GL_CHECK(glViewport(0, 0, m_width, m_height));
-        }
+        m_new_width = xevt.xconfigure.width;
+        m_new_height = xevt.xconfigure.height;
         break;
       }
       default:

@@ -28,11 +28,10 @@
 Texture::~Texture()
 {}
 
-Loader::Loader(SenseClient* client)
+Loader::Loader()
   : self(new LoaderImpl)
 {
   self->finished = false;
-  self->client = client;
 
   std::stringstream ss;
   unsigned int num_instances = 64; // TODO: fetch from config system

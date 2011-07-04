@@ -34,8 +34,6 @@ public:
 
   unsigned int width() const { return m_width; }
   unsigned int height() const { return m_height; }
-  
-  
 
 private:
   void platformInit();
@@ -61,7 +59,8 @@ private:
   std::string loader_error_string;
 
   // Information about the client window
-  unsigned int m_width, m_height;
+  uint32_t m_new_width, m_new_height;
+  uint32_t m_width, m_height;
   ClientPlatform* m_platform_info;
 
 // Various platform-specific bits that need to be handled

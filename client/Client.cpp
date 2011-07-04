@@ -20,12 +20,12 @@
 #include "python/pipeline/PyLoader.hpp"
 
 SenseClient::SenseClient()
-  : m_loader_init_complete(false), m_width(800), m_height(600)
+  : m_loader_init_complete(false), m_new_width(800), m_new_height(600), m_width(800), m_height(600)
 {
   platformInit();
-  m_pipeline = new Pipeline(this);
+  m_pipeline = new Pipeline;
   if(m_pipeline->isLoaderThreaded()) {
-    platformDetachContext();
+    platformDetachContext(); // Some platforms (notably X11 with OpenGL) require contexts be unbound before sharing resources
     m_loader_thread = boost::thread(std::mem_fun(&SenseClient::runLoaderThread), this);
     while(!m_loader_init_complete) {}
     platformAttachContext();
@@ -43,19 +43,34 @@ SenseClient::SenseClient()
   setupPythonModule();
   m_loader->loadMaterialFiles("../data/materials/");
   framebuffer = m_pipeline->createRenderTarget(width(), height(), false);
+  m_pipeline->setViewport(width(), height());
 };
 
 SenseClient::~SenseClient()
 {
   m_pipeline->destroyRenderTarget(framebuffer);
-  m_loader->finish();
-  m_loader_thread.join();
+  if(m_pipeline->isLoaderThreaded()) {
+    m_loader->finish();
+    m_loader_thread.join();
+    // m_loader is cleaned up at the end of its own thread
+  } else {
+    delete m_loader;
+    platformFinishLoader();
+  }
   delete m_pipeline;
   platformFinish();
 }
 
 bool SenseClient::tick()
 {
+  if (m_new_width != m_width || m_new_height != m_height) {
+    m_width = m_new_width;
+    m_height = m_new_height;
+    m_pipeline->destroyRenderTarget(framebuffer);
+    framebuffer = m_pipeline->createRenderTarget(width(), height(), false);
+    m_pipeline->setViewport(width(), height());
+  }
+
   m_pipeline->setRenderTarget(framebuffer);
   m_pipeline->render();
   m_pipeline->endFrame();

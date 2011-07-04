@@ -33,7 +33,7 @@ class SenseClient;
 class Loader
 {
 public:
-  Loader(SenseClient*);
+  Loader();
   ~Loader();
 
   // Load the mesh of the given name into a GPU buffer object
@@ -69,7 +69,7 @@ private:
 class Pipeline
 {
 public:
-  Pipeline(SenseClient*);
+  Pipeline();
   ~Pipeline();
 
   // Add a drawable to be rendered this frame
@@ -95,6 +95,9 @@ public:
 
   // Set the active RenderTarget
   void setRenderTarget(RenderTarget* target);
+
+  // Set the region of the window to render to
+  void setViewport(uint32_t width, uint32_t height);
 
   // Check if the loader is threaded.
   // This information is in the Pipeline, rather than the Loader, because the info may be needed for platform init before the Loader is created

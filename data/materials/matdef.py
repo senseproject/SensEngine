@@ -21,4 +21,5 @@ def register_material(name, mat):
         return None
     except AttributeError: # we want to forward any errors that might have come from the pipeline
         pass
+    # registration functions for other situations than the default client go here
     raise NotImplementedError("Don't understand this context; can't register materials")

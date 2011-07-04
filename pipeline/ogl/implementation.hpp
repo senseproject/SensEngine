@@ -86,16 +86,16 @@ struct RenderTarget
 
 struct PipelineImpl 
 {
-  SenseClient* client;
   RenderTarget* current_framebuffer;
 
   GLuint cur_fsaa;
   std::set<uint32_t> fsaa_levels;
+
+  GLuint width, height;
 };
 
 struct LoaderImpl
 {
-  SenseClient* client;
   volatile bool finished;
   std::string shader_header;
   std::unordered_map<std::string, MaterialDef> material_defs;

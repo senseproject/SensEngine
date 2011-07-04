@@ -14,14 +14,11 @@
 
 #include "implementation.hpp"
 #include "../interface.hpp"
-#include "client/Client.hpp"
 #include "glexcept.hpp"
 
-Pipeline::Pipeline(SenseClient* client)
+Pipeline::Pipeline()
   : self(new PipelineImpl)
 {
-  self->client = client;
-
   // Get information on FSAA availability
   int dsamples, csamples;
   GL_CHECK(glGetIntegerv(GL_MAX_DEPTH_TEXTURE_SAMPLES, &dsamples));
@@ -62,7 +59,7 @@ void Pipeline::endFrame()
   GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, self->current_framebuffer->lbuffer_id));
   // TODO: draw panels
   GL_CHECK(glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0));
-  GL_CHECK(glBlitFramebuffer(0, 0, self->current_framebuffer->width, self->current_framebuffer->height, 0, 0, self->client->width(), self->client->height(), GL_COLOR_BUFFER_BIT, GL_NEAREST));
+  GL_CHECK(glBlitFramebuffer(0, 0, self->current_framebuffer->width, self->current_framebuffer->height, 0, 0, self->width, self->height, GL_COLOR_BUFFER_BIT, GL_NEAREST));
 }
 
 RenderTarget* Pipeline::createRenderTarget(uint32_t width, uint32_t height, bool mipmap)
@@ -130,6 +127,13 @@ void Pipeline::setRenderTarget(RenderTarget* rt)
   self->current_framebuffer = rt;
 }
 
+void Pipeline::setViewport(uint32_t width, uint32_t height)
+{
+  self->width = width;
+  self->height = height;
+  GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, 0));
+  GL_CHECK(glViewport(0, 0, width, height));
+}
 
 bool Pipeline::isLoaderThreaded()
 {
@@ -138,5 +142,5 @@ bool Pipeline::isLoaderThreaded()
 
 Loader* Pipeline::createLoader()
 {
-  return new Loader(self->client);
+  return new Loader;
 }
