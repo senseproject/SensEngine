@@ -15,6 +15,12 @@
 #ifndef SENSE_CLIENT_HPP
 #define SENSE_CLIENT_HPP
 
+#ifdef _WIN32
+// it's this or duplicate typedefs. I'd rather go with this >_>
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+#endif
+
 #include <boost/thread.hpp>
 
 class Pipeline;
@@ -64,10 +70,9 @@ private:
   ClientPlatform* m_platform_info;
 
 // Various platform-specific bits that need to be handled
-#ifdef WIN32
+#ifdef _WIN32
   bool platformWndProcReturn;
-  void platformSetWndProcRet(bool b) { platformWndProcReturn = b; }
-  
+  const char* windowClass();
   friend LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 #endif
 };

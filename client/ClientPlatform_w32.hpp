@@ -12,16 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "client/Client.hpp"
+#include "GL/glew.h"
+#include "GL/wglew.h"
 
-const char* SenseClient::displayName()
+struct ClientPlatform
 {
-  return "${SENSE_CLIENT_DISPLAY_NAME}";
-}
-
-#ifdef _WIN32
-const char* SenseClient::windowClass()
-{
-  return "${SENSE_CLIENT_WINDOW_CLASS}";
-}
-#endif
+  HWND hwnd;
+  HDC hdc;
+  HGLRC ctx;
+  HGLRC loader_ctx;
+};

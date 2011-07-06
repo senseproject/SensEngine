@@ -4,7 +4,7 @@ ADD_LIBRARY(SensePipe
             implementation.hpp
             Pipeline.cpp
             Loader.cpp
-            Webview.cpp Webview.hpp
+#            Webview.cpp Webview.hpp
             
 )
 IF(CMAKE_COMPILER_IS_GNUCXX)

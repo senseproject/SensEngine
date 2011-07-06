@@ -15,15 +15,15 @@
 #include "python/module.hpp"
 #include "client/Client.hpp"
 
-#include <berkelium/Berkelium.hpp>
+// #include <berkelium/Berkelium.hpp>
 
 void initClientModule() {
 
 }
 
 int main(int argc, char **argv) {
-  if(!Berkelium::init(Berkelium::FileString::empty()))
-    throw std::runtime_error("Could not initialize Berkelium!");
+//   if(!Berkelium::init(Berkelium::FileString::empty()))
+//     throw std::runtime_error("Could not initialize Berkelium!");
 
   Py_NoSiteFlag = 1;
   Py_SetProgramName((wchar_t*)L"SensEngine");
@@ -33,7 +33,7 @@ int main(int argc, char **argv) {
   SenseClient client;
 
   for(;;) {
-    Berkelium::update();
+//     Berkelium::update();
     if(!client.tick())
       break;
   }

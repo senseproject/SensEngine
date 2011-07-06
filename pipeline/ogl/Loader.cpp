@@ -19,7 +19,7 @@
 #include "../Drawable.hpp"
 #include "../Builtins.hpp"
 #include "glexcept.hpp"
-#include "Webview.hpp"
+// #include "Webview.hpp"
 
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
@@ -156,9 +156,10 @@ Texture* LoaderImpl::loadTexture(std::string path) {
 }
 
 Texture* LoaderImpl::loadWebview(std::string path) {
-  boost::filesystem::path html_path = boost::filesystem::current_path() / "../data/html" / path;
-  Webview* w = new Webview("file://"+html_path.string(), 800, 600);
-  return w;
+  return loadTexture("__MISSING__");
+//   boost::filesystem::path html_path = boost::filesystem::current_path() / "../data/html" / path;
+//   Webview* w = new Webview("file://"+html_path.string(), 800, 600);
+//   return w;
 }
 
 GlShader* LoaderImpl::loadShader(std::string path, GlShader::Type type) {
