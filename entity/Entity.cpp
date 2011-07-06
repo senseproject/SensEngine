@@ -15,8 +15,28 @@
 #include "Entity.hpp"
 #include "Component.hpp"
 
+Component::~Component()
+{}
+
 EntityFactory::~EntityFactory()
 {}
 
-Component::~Component()
-{}
+Entity* EntityManager::createEntity(std::string classname)
+{
+  Entity* e =  m_factories[classname]->create();
+  e->m_type = classname;
+  e->m_uuid = m_uuidgen();
+  return e;
+}
+
+void EntityManager::destroyEntity(Entity* e)
+{
+  for(auto i = e->m_components.begin(); i != e->m_components.end(); ++i)
+    delete *i;
+  delete e;
+}
+
+void EntityManager::addFactory(std::string classname, EntityFactory* fact)
+{
+  m_factories.insert(std::make_pair(classname, fact));
+}

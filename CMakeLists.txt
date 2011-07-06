@@ -83,6 +83,10 @@ SET(SENSE_python_pipeline_hdrs
   python/pipeline/PyMaterialDef.hpp
 )
 
+SET(SENSE_python_entity_srcs
+  python/entity/EntityFactory.cpp
+)
+
 SET(SENSE_python_hdrs
   python/module.hpp
   python/pywarnings.hpp
@@ -95,7 +99,7 @@ SET(SENSE_util_hdrs
 )
 
 set(SENSE_entity_srcs
-  entity/stubs.cpp
+  entity/Entity.cpp
 )
 
 set(SENSE_entity_hdrs
@@ -117,6 +121,7 @@ ADD_LIBRARY(SenseCore
             ${SENSE_entity_srcs} ${SENSE_entity_hdrs}
             ${SENSE_pipeline_srcs} ${SENSE_pipeline_hdrs}
             ${SENSE_python_srcs} ${SENSE_python_hdrs}
+            ${SENSE_python_entity_srcs}
             ${SENSE_python_pipeline_srcs} ${SENSE_python_pipeline_hdrs}
             ${SENSE_util_hdrs}
 )

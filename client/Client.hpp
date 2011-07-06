@@ -21,10 +21,13 @@
 #include <Windows.h>
 #endif
 
+#include <boost/filesystem/path.hpp>
 #include <boost/thread.hpp>
+#include <string>
 
 class Pipeline;
 class Loader;
+class EntityManager;
 
 struct RenderTarget;
 
@@ -54,9 +57,14 @@ private:
   void runLoaderThread();
 
   void setupPythonModule();
+  void readScriptsDir(boost::filesystem::path, std::string);
 
   const char* displayName();
+
+  // general members
+  EntityManager* m_manager;
   
+  // Pipeline related members
   Pipeline* m_pipeline;
   Loader* m_loader;
   RenderTarget* framebuffer;

@@ -18,10 +18,20 @@
 #include "Client.hpp"
 
 #include "python/pipeline/PyLoader.hpp"
+#include "python/entity/api.hpp"
+
+#include "entity/Entity.hpp"
+
+#include <boost/filesystem.hpp>
+#include <boost/filesystem/fstream.hpp>
+
+namespace fs = boost::filesystem;
 
 SenseClient::SenseClient()
   : m_loader_init_complete(false), m_new_width(800), m_new_height(600), m_width(800), m_height(600)
 {
+  m_manager = new EntityManager;
+
   platformInit();
   m_pipeline = new Pipeline;
   if(m_pipeline->isLoaderThreaded()) {
@@ -40,10 +50,13 @@ SenseClient::SenseClient()
     m_loader = m_pipeline->createLoader();
   }
 
-  setupPythonModule();
-  m_loader->loadMaterialFiles("../data/materials/");
   framebuffer = m_pipeline->createRenderTarget(width(), height(), false);
   m_pipeline->setViewport(width(), height());
+
+  setupPythonModule();
+
+  readScriptsDir("../data/materials", ".smtl");
+  readScriptsDir("../daat/definitions", ".sdef");
 };
 
 SenseClient::~SenseClient()
@@ -100,6 +113,25 @@ void SenseClient::setupPythonModule()
   PyObject* m = PyImport_AddModule("SensEngine.client");
   PyModule_AddObject(m, "__builtins__", PyEval_GetBuiltins());
   PyModule_AddObject(m, "loader", PyLoader_create(m_loader));
+  PyModule_AddObject(m, "manager", PyEntityManager_create(m_manager));
   PyModule_AddObject(SensModule, "client", m);
   PyModule_AddStringConstant(SensModule, "__path__", "SensEngine");
+}
+
+void SenseClient::readScriptsDir(fs::path dir, std::string ext)
+{
+  if(!exists(dir))
+    return;
+
+  PyObject* old_sys_path = appendSysPath(dir.string().c_str(), true);
+  fs::directory_iterator end_itr;
+  for(fs::directory_iterator itr(dir); itr != end_itr; ++itr) {
+    if(itr->path().extension() == ext) {
+      fs::ifstream stream;
+      stream.open(itr->path());
+      std::string pydefcode((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
+      PyRun_SimpleString(pydefcode.c_str());
+    }
+   }
+  restoreSysPath(old_sys_path);
 }

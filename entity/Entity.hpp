@@ -16,7 +16,9 @@
 #define SENSE_ENTITY_ENTITY_HPP
 
 #include <boost/uuid/uuid.hpp>
+#include <boost/uuid/random_generator.hpp>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 class Component;
@@ -32,8 +34,9 @@ struct Entity
 // an EntityFactory subclass creates a specific entity by
 // building and attaching the needed set of components.
 
-// A factory subclass should set Entity::m_type to a
-// string value representing the logical type of the entity.
+// A factory subclass does not need to set m_type. This is handled
+// by the EntityManager. The same goes for generating a new UUID
+// for the Entity instance.
 
 // Entity factories can have local data (hence the virtual destructor)
 // However, that local data should not effect the creation of an entity
@@ -43,8 +46,26 @@ class EntityFactory
 {
 public:
   virtual ~EntityFactory();
+
+private:
   virtual Entity* create() = 0;
   // TODO: a creation method that can read serialized entity data
+
+  friend class EntityManager;
 };
+
+class EntityManager
+{
+public:
+  Entity* createEntity(std::string);
+  void destroyEntity(Entity*);
+  
+  void addFactory(std::string, EntityFactory*);
+private:
+  std::unordered_map<std::string, EntityFactory*> m_factories;
+  boost::uuids::random_generator m_uuidgen;
+};
+
+
 
 #endif // SENSE_ENTITY_ENTITY_HPP

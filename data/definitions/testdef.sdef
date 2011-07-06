@@ -1,0 +1,7 @@
+import SensEngine
+
+class DummyFactory(SensEngine.EntityFactory):
+    def create(self):
+        print("Dummy creation function called")
+
+SensEngine.client.manager.add_factory(DummyFactory(), "dummy")

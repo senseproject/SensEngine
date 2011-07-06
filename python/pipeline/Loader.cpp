@@ -57,7 +57,7 @@ PyTypeObject PyLoader_Type = {
   0,
   0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 0,
-  Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+  Py_TPFLAGS_DEFAULT,
   "SensEngine data loader",
   0, 0, 0, 0, 0, 0,
   PyLoader_methods,
