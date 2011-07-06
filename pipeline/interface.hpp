@@ -32,6 +32,9 @@ struct DrawableMesh;
 
 class SenseClient;
 
+
+// TODO: move material handling to a higher level
+// TODO: add interfaces for shader programs and textures
 class Loader
 {
 public:

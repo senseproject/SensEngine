@@ -46,7 +46,6 @@ struct DrawableMesh {
     Normalize,
     Integer,
   };
-  
 
   struct Attribute 
   {
