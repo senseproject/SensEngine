@@ -105,8 +105,6 @@ set(SENSE_entity_hdrs
 
 SET(SENSE_link_libraries
   SenseCore
-  SensePipe
-  SenseCore
   ${OPENGL_gl_LIBRARY}
   ${Boost_LIBRARIES}
   ${PYTHON_LIBRARY}
@@ -122,15 +120,19 @@ ADD_LIBRARY(SenseCore
             ${SENSE_python_pipeline_srcs} ${SENSE_python_pipeline_hdrs}
             ${SENSE_util_hdrs}
 )
+ADD_LIBRARY(SenseDummyPipe
+            pipeline/dummy.cpp
+)
 IF(CMAKE_COMPILER_IS_GNUCXX)
   SET_TARGET_PROPERTIES(SenseCore PROPERTIES COMPILE_FLAGS "-fPIC" LINK_FLAGS "-fPIC")
+  SET_TARGET_PROPERTIES(SenseDummyPipe PROPERTIES COMPILE_FLAGS "-fPIC" LINK_FLAGS "-fPIC")
 ENDIF(CMAKE_COMPILER_IS_GNUCXX)
 
 ADD_EXECUTABLE(SensEngine main.cpp ${SENSE_client_srcs} ${SENSE_client_hdrs})
-TARGET_LINK_LIBRARIES(SensEngine ${SENSE_link_libraries})
+TARGET_LINK_LIBRARIES(SensEngine SensePipe ${SENSE_link_libraries})
 
 ADD_LIBRARY(PySensEngine SHARED pysense.cpp)
-TARGET_LINK_LIBRARIES(PySensEngine ${SENSE_link_libraries})
+TARGET_LINK_LIBRARIES(PySensEngine ${SENSE_link_libraries} SenseDummyPipe)
 SET_TARGET_PROPERTIES(PySensEngine PROPERTIES PREFIX "" OUTPUT_NAME "SensEngine")
 IF(WIN32)
   SET_TARGET_PROPERTIES(PySensEngine PROPERTIES SUFFIX ".pyd")
