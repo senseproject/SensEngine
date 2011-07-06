@@ -1,7 +1,7 @@
-import entdef
+from entdef import *
 
-class DummyFactory(ent.EntityFactory):
+class DummyFactory(EntityFactory):
     def create(self):
         print("Dummy creation function called")
 
-entdef.register_factory("dummy", DummyFactory)
+register_factory("dummy", DummyFactory)
