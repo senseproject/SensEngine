@@ -35,9 +35,6 @@ void Loader::releaseMaterial(Material*)
 void Loader::addMaterial(MaterialDef, std::string)
 {}
 
-void Loader::loadMaterialFiles(boost::filesystem::path)
-{}
-
 void Loader::exec()
 {}
 

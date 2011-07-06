@@ -52,9 +52,6 @@ public:
   // Add a material definition with the given name
   void addMaterial(MaterialDef def, std::string name);
 
-  // Load material files from the given directory
-  void loadMaterialFiles(boost::filesystem::path);
-
   // If the Loader implementation is threaded, this will run the threaded proc
   // If not, this must be implemented as an empty function.
   void exec();

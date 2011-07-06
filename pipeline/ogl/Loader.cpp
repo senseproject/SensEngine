@@ -78,23 +78,6 @@ void Loader::addMaterial(MaterialDef m, std::string n)
   }
 }
 
-void Loader::loadMaterialFiles(boost::filesystem::path dir)
-{
-  if(!exists(dir)) return;
-  PyObject* old_path = appendSysPath(dir.string().c_str(), true);
-
-  boost::filesystem::directory_iterator end_itr;
-  for(boost::filesystem::directory_iterator itr(dir); itr != end_itr; ++itr) {
-    if(itr->path().extension() == ".smtl") {
-      boost::filesystem::ifstream stream;
-      stream.open(itr->path());
-      std::string pymtlcode((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
-      PyRun_SimpleString(pymtlcode.c_str());
-    }
-  }
-  restoreSysPath(old_path);
-}
-
 void Loader::exec()
 {
   while (!self->finished);
