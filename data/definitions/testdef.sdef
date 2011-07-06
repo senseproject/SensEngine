@@ -1,7 +1,7 @@
-import SensEngine
+import entdef
 
-class DummyFactory(SensEngine.EntityFactory):
+class DummyFactory(ent.EntityFactory):
     def create(self):
         print("Dummy creation function called")
 
-SensEngine.client.manager.add_factory(DummyFactory(), "dummy")
+entdef.register_factory("dummy", DummyFactory)
