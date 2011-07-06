@@ -94,6 +94,15 @@ SET(SENSE_util_hdrs
   util/util.hpp
 )
 
+set(SENSE_entity_srcs
+  entity/stubs.cpp
+)
+
+set(SENSE_entity_hdrs
+  entity/Component.hpp
+  entity/Entity.hpp
+)
+
 SET(SENSE_link_libraries
   SenseCore
   SensePipe
@@ -107,6 +116,7 @@ SET(SENSE_link_libraries
 
 ADD_LIBRARY(SenseCore
             ${SENSE_platform_srcs}
+            ${SENSE_entity_srcs} ${SENSE_entity_hdrs}
             ${SENSE_pipeline_srcs} ${SENSE_pipeline_hdrs}
             ${SENSE_python_srcs} ${SENSE_python_hdrs}
             ${SENSE_python_pipeline_srcs} ${SENSE_python_pipeline_hdrs}
@@ -130,3 +140,4 @@ SOURCE_GROUP("pipeline" FILES ${SENSE_pipeline_srcs} ${SENSE_pipeline_hdrs})
 SOURCE_GROUP("python" FILES ${SENSE_python_srcs} ${SENSE_python_hdrs})
 SOURCE_GROUP("python\\pipeline" FILES ${SENSE_python_pipeline_srcs} ${SENSE_python_pipeline_hdrs})
 SOURCE_GROUP("util" FILES ${SENSE_util_hdrs})
+SOURCE_GROUP("entity" FILES ${SENSE_entity_srcs} ${SENSE_entity_hdrs})
