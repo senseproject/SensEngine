@@ -75,6 +75,4 @@ private:
   boost::uuids::random_generator m_uuidgen;
 };
 
-
-
 #endif // SENSE_ENTITY_ENTITY_HPP
