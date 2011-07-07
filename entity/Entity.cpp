@@ -18,6 +18,13 @@
 Component::~Component()
 {}
 
+void Component::sendMessage(const Message& m)
+{
+  for(auto i = m_owner->m_components.begin(); i != m_owner->m_components.end(); ++i)
+    if(*i != this)
+      (*i)->receiveMessage(m);
+}
+
 EntityFactory::~EntityFactory()
 {}
 

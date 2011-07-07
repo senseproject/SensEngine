@@ -12,25 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef SENSE_ENTITY_COMPONENT_HPP
-#define SENSE_ENTITY_COMPONENT_HPP
+#ifndef SENSE_ENTITY_COORDINATECOMPONENT_HPP
+#define SENSE_ENTITY_COORDINATECOMPONENT_HPP
 
-class Entity;
-class Message;
+#include "3rdparty/glm/glm.hpp"
 
-class Component
+#include "Component.hpp"
+
+class CoordinateComponent : public Component
 {
 public:
-  Component(Entity* owner) : m_owner(owner) {}
-  
-  virtual ~Component();
+  CoordinateComponent(Entity*);
+  virtual ~CoordinateComponent();
 
-  virtual void receiveMessage(const Message&) = 0;
+  void setParentTransform(glm::mat4 par2wor);
+  void setTransform(glm::mat4 loc2par);
 
-protected:
-  virtual void sendMessage(const Message&);
-
-  Entity* m_owner;
+private:
+  glm::mat4 local2parent;
+  glm::mat4 local2world;
+  glm::mat4 parent2world;
 };
 
-#endif // SENSE_ENTITY_COMPONENT_HPP
+#endif // SENSE_ENTITY_COORDINATECOMPONENT_HPP

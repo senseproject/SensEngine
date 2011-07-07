@@ -22,6 +22,9 @@
 #include <vector>
 
 class Component;
+class CoordinateComponent;
+class DrawableComponent;
+class PhysicalComponent;
 
 struct Entity
 {
@@ -29,6 +32,12 @@ struct Entity
   std::string m_name;
   boost::uuids::uuid m_uuid;
   std::vector<Component*> m_components;
+
+  // Components that need to have "quick access"
+  // It's a hack, but there's really nothing to do for it.
+  CoordinateComponent* m_coord;
+  DrawableComponent* m_draw;
+  PhysicalComponent* m_phys;
 };
 
 // an EntityFactory subclass creates a specific entity by

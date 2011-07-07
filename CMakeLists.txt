@@ -104,11 +104,13 @@ SET(SENSE_util_hdrs
 )
 
 set(SENSE_entity_srcs
+  entity/CoordinateComponent.cpp
   entity/Entity.cpp
 )
 
 set(SENSE_entity_hdrs
   entity/Component.hpp
+  entity/CoordinateComponent.hpp
   entity/Entity.hpp
 )
 
