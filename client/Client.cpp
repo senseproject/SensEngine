@@ -56,7 +56,7 @@ SenseClient::SenseClient()
   setupPythonModule();
 
   readScriptsDir("../data/materials", ".smtl");
-  readScriptsDir("../daat/definitions", ".sdef");
+  readScriptsDir("../data/definitions", ".sdef");
 };
 
 SenseClient::~SenseClient()

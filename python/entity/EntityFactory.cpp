@@ -16,6 +16,8 @@
 #include "python/pywarnings.hpp"
 #include "entity/Entity.hpp"
 
+#include "PyEntity.hpp"
+
 class PythonEntityFactory : public EntityFactory
 {
 public:
@@ -35,8 +37,14 @@ private:
   virtual Entity* create()
     {
       // TODO: pass a default set of arguments
-      PyObject_CallMethod(m_self, "create", 0);
-      return new Entity; // TODO: parse the actual result
+      PyObject* ent = PyObject_CallMethod(m_self, "create", "");
+      if(!ent) {
+        // TODO: handle the error
+        return NULL;
+      }
+      if(!PyObject_IsInstance(ent, (PyObject*)&PyEntity_Type))
+        return NULL;
+      return ((PyEntity*)ent)->ent;
     }
 
   // TODO: some sort of serializaton read function
@@ -70,6 +78,8 @@ static PyObject* PyEntityManager_new(PyTypeObject*, PyObject*, PyObject*)
   return NULL;
 }
 
+extern PyTypeObject PyEntityFactory_Type;
+
 static PyObject* PyEntityManager_add_factory(PyObject* self, PyObject* args)
 {
   PyObject* factory;
@@ -83,13 +93,17 @@ static PyObject* PyEntityManager_add_factory(PyObject* self, PyObject* args)
     return 0;
   }
 
+  if(!PyObject_IsInstance(factory, (PyObject*)&PyEntityFactory_Type)) {
+    PyErr_SetString(PyExc_TypeError, "Must pass a subclass of the Factory type");
+    return 0;
+  }
+
   PyObject* bytes = PyUnicode_AsUTF8String(classname);
   if(!bytes)
     return 0;
 
   char* classstring = PyBytes_AsString(bytes);
-  PythonEntityFactory* fact = new PythonEntityFactory(factory);
-  ((PyEntityManager*)self)->mgr->addFactory(classstring, fact);
+  ((PyEntityManager*)self)->mgr->addFactory(classstring, ((PyEntityFactory*)factory)->fact);
   Py_DECREF(bytes);
   Py_RETURN_NONE;
 }

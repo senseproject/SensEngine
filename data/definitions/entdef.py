@@ -14,10 +14,12 @@
 
 import SensEngine
 from SensEngine import EntityFactory
+from SensEngine import Entity
 
-def register_factory(name, class):
+def register_factory(name, factory):
     try:
-        SensEngine.client.manager.add_factory(class(), name)
+        SensEngine.client.manager.add_factory(factory(), name)
+        return None
     except AttributeError: # we want to forward any errors that might come from the manager
         pass
     # registration functions for other situations besides the default client go here

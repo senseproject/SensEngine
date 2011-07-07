@@ -17,7 +17,7 @@
 
 extern void initMaterialDefinition(PyObject*);
 extern void initLoader(PyObject*);
-extern void initEntityFactory(PyObject*);
+extern void initEntityClasses(PyObject*);
 
 PyModuleDef SenseModule = {
   PyModuleDef_HEAD_INIT,
@@ -30,7 +30,7 @@ PyMODINIT_FUNC initSensEngine() {
   PyObject *m = PyModule_Create(&SenseModule);
   initMaterialDefinition(m);
   initLoader(m);
-  initEntityFactory(m);
+  initEntityClasses(m);
   return m;
 }
 

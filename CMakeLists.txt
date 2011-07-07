@@ -84,7 +84,12 @@ SET(SENSE_python_pipeline_hdrs
 )
 
 SET(SENSE_python_entity_srcs
+  python/entity/Entity.cpp
   python/entity/EntityFactory.cpp
+)
+
+SET(SENSE_python_entity_hdrs
+  python/entity/PyEntity.hpp
 )
 
 SET(SENSE_python_hdrs
@@ -121,7 +126,7 @@ ADD_LIBRARY(SenseCore
             ${SENSE_entity_srcs} ${SENSE_entity_hdrs}
             ${SENSE_pipeline_srcs} ${SENSE_pipeline_hdrs}
             ${SENSE_python_srcs} ${SENSE_python_hdrs}
-            ${SENSE_python_entity_srcs}
+            ${SENSE_python_entity_srcs} ${SENSE_python_entity_hdrs}
             ${SENSE_python_pipeline_srcs} ${SENSE_python_pipeline_hdrs}
             ${SENSE_util_hdrs}
 )
@@ -146,6 +151,7 @@ ENDIF(WIN32)
 SOURCE_GROUP("pipeline" FILES ${SENSE_pipeline_srcs} ${SENSE_pipeline_hdrs})
 SOURCE_GROUP("python" FILES ${SENSE_python_srcs} ${SENSE_python_hdrs})
 SOURCE_GROUP("python\\pipeline" FILES ${SENSE_python_pipeline_srcs} ${SENSE_python_pipeline_hdrs})
+SOURCE_GROUP("python\\entity" FILES ${SENSE_python_entity_srcs} ${SENSE_python_entity_hdrs})
 SOURCE_GROUP("util" FILES ${SENSE_util_hdrs})
 SOURCE_GROUP("entity" FILES ${SENSE_entity_srcs} ${SENSE_entity_hdrs})
 SOURCE_GROUP("client" FILES ${SENSE_client_srcs} ${SENSE_client_hdrs})

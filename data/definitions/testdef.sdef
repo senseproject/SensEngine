@@ -2,6 +2,6 @@ from entdef import *
 
 class DummyFactory(EntityFactory):
     def create(self):
-        print("Dummy creation function called")
+        return Entity()
 
 register_factory("dummy", DummyFactory)
