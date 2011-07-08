@@ -4,5 +4,6 @@ class DummyFactory(EntityFactory):
     def create(self):
        e = Entity()
        c = Components.Coordinate(e)
+       return e
 
 register_factory("dummy", DummyFactory)
