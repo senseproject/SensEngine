@@ -17,9 +17,9 @@
 
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/random_generator.hpp>
+#include <set>
 #include <string>
 #include <unordered_map>
-#include <vector>
 
 class Component;
 class CoordinateComponent;
@@ -31,9 +31,9 @@ struct Entity
   std::string m_type;
   std::string m_name;
   boost::uuids::uuid m_uuid;
-  std::vector<Component*> m_components;
+  std::set<Component*> m_components;
 
-  // Components that need to have "quick access"
+  // Components that need to have "quick access" by other components
   // It's a hack, but there's really nothing to do for it.
   CoordinateComponent* m_coord;
   DrawableComponent* m_draw;

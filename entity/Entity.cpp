@@ -18,11 +18,13 @@
 Component::Component(Entity* owner)
  : m_owner(owner)
 {
-  m_owner->m_components.push_back(this);
+  m_owner->m_components.insert(this);
 }
 
 Component::~Component()
-{}
+{
+  m_owner->m_components.erase(m_owner->m_components.find(this));
+}
 
 void Component::sendMessage(const Message& m)
 {
