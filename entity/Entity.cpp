@@ -15,6 +15,12 @@
 #include "Entity.hpp"
 #include "Component.hpp"
 
+Component::Component(Entity* owner)
+ : m_owner(owner)
+{
+  m_owner->m_components.push_back(this);
+}
+
 Component::~Component()
 {}
 
@@ -31,15 +37,18 @@ EntityFactory::~EntityFactory()
 Entity* EntityManager::createEntity(std::string classname)
 {
   Entity* e =  m_factories[classname]->create();
-  e->m_type = classname;
-  e->m_uuid = m_uuidgen();
+  if (e) {
+    e->m_type = classname;
+    e->m_uuid = m_uuidgen();
+  }
   return e;
 }
 
 void EntityManager::destroyEntity(Entity* e)
 {
-  for(auto i = e->m_components.begin(); i != e->m_components.end(); ++i)
-    delete *i;
+  if (e)
+    for(auto i = e->m_components.begin(); i != e->m_components.end(); ++i)
+      delete *i;
   delete e;
 }
 

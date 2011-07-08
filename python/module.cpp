@@ -28,6 +28,7 @@ PyModuleDef SenseModule = {
 
 PyMODINIT_FUNC initSensEngine() {
   PyObject *m = PyModule_Create(&SenseModule);
+  PyModule_AddStringConstant(m, "__path__", "SensEngine");
   initMaterialDefinition(m);
   initLoader(m);
   initEntityClasses(m);

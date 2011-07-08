@@ -2,6 +2,7 @@ from entdef import *
 
 class DummyFactory(EntityFactory):
     def create(self):
-        return Entity()
+       e = Entity()
+       c = Components.Coordinate(e)
 
 register_factory("dummy", DummyFactory)

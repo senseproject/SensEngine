@@ -14,21 +14,23 @@
 
 #include "python/module.hpp"
 #include "python/pywarnings.hpp"
-#include "entity/Entity.hpp"
+#include "entity/Component.hpp"
 
-#include "PyEntity.hpp"
-
-static PyObject* PyEntity_new(PyTypeObject* type, PyObject*, PyObject*)
+struct PyComponent
 {
-  PyEntity* entity = (PyEntity*)type->tp_alloc(type, 0);
-  entity->ent = new Entity;
-  return (PyObject*)entity;
+  PyObject_HEAD;
+};
+
+static PyObject* PyComponent_new(PyTypeObject* type, PyObject*, PyObject*)
+{
+  PyErr_SetString(PyExc_TypeError, "Component is an abstract class ; please instantiate a proper subclass");
+  return NULL;
 }
 
-PyTypeObject PyEntity_Type = {
+PyTypeObject PyComponent_Type = {
   PyObject_HEAD_INIT(0)
-  "SensEngine.Entity",
-  sizeof(PyEntity),
+  "SensEngine.Components.Component",
+  sizeof(PyComponent),
   0,
   0,
   0, 0, 0, 0, 0, 0, 0,
@@ -38,18 +40,19 @@ PyTypeObject PyEntity_Type = {
   0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0,
   0, 0, 0, 0,
-  PyEntity_new
+  PyComponent_new
 };
 
-extern void initEntityFactory(PyObject*);
-extern void initComponentClasses(PyObject*);
+extern void initCoordinateComponent(PyObject*);
 
-void initEntityClasses(PyObject* m)
+void initComponentClasses(PyObject* m)
 {
-  if(PyType_Ready(&PyEntity_Type) < 0)
+  if(PyType_Ready(&PyComponent_Type) < 0)
     return;
-  Py_INCREF(&PyEntity_Type);
-  PyModule_AddObject(m, "Entity", (PyObject*)&PyEntity_Type);
-  initEntityFactory(m);
-  initComponentClasses(m);
+  Py_INCREF(&PyComponent_Type);
+  PyObject* compmod = PyImport_AddModule("SensEngine.Components");
+  PyModule_AddObject(compmod, "__builtins__", PyEval_GetBuiltins());
+  PyModule_AddObject(compmod, "Component", (PyObject*)&PyComponent_Type);
+  PyModule_AddObject(m, "Components", compmod);
+  initCoordinateComponent(compmod);
 }

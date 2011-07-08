@@ -37,3 +37,6 @@ void CoordinateComponent::setTransform(glm::mat4 loc2par)
   local2world = local2parent * parent2world;
   // TODO: send update message to other components
 }
+
+void CoordinateComponent::receiveMessage(const Message&)
+{}

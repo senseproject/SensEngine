@@ -39,7 +39,8 @@ private:
       // TODO: pass a default set of arguments
       PyObject* ent = PyObject_CallMethod(m_self, "create", "");
       if(!ent) {
-        // TODO: handle the error
+        PyErr_Print();
+        // TODO: better error handling
         return NULL;
       }
       if(!PyObject_IsInstance(ent, (PyObject*)&PyEntity_Type))

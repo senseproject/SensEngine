@@ -28,6 +28,8 @@ public:
   void setParentTransform(glm::mat4 par2wor);
   void setTransform(glm::mat4 loc2par);
 
+  virtual void receiveMessage(const Message&);
+
 private:
   glm::mat4 local2parent;
   glm::mat4 local2world;

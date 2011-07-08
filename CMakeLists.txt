@@ -84,6 +84,8 @@ SET(SENSE_python_pipeline_hdrs
 )
 
 SET(SENSE_python_entity_srcs
+  python/entity/Component.cpp
+  python/entity/CoordinateComponent.cpp
   python/entity/Entity.cpp
   python/entity/EntityFactory.cpp
 )

@@ -21,7 +21,7 @@ class Message;
 class Component
 {
 public:
-  Component(Entity* owner) : m_owner(owner) {}
+  Component(Entity* owner);
   
   virtual ~Component();
 

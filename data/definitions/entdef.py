@@ -15,6 +15,7 @@
 import SensEngine
 from SensEngine import EntityFactory
 from SensEngine import Entity
+from SensEngine import Components
 
 def register_factory(name, factory):
     try:

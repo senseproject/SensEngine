@@ -115,7 +115,6 @@ void SenseClient::setupPythonModule()
   PyModule_AddObject(m, "loader", PyLoader_create(m_loader));
   PyModule_AddObject(m, "manager", PyEntityManager_create(m_manager));
   PyModule_AddObject(SensModule, "client", m);
-  PyModule_AddStringConstant(SensModule, "__path__", "SensEngine");
 }
 
 void SenseClient::readScriptsDir(fs::path dir, std::string ext)
