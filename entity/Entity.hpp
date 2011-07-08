@@ -15,6 +15,7 @@
 #ifndef SENSE_ENTITY_ENTITY_HPP
 #define SENSE_ENTITY_ENTITY_HPP
 
+#include <boost/functional/hash.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/random_generator.hpp>
 #include <set>
@@ -67,10 +68,12 @@ class EntityManager
 {
 public:
   Entity* createEntity(std::string);
-  void destroyEntity(Entity*);
+  void destroyEntity(boost::uuids::uuid);
+  Entity* findEntity(boost::uuids::uuid);
   
   void addFactory(std::string, EntityFactory*);
 private:
+  std::unordered_map<boost::uuids::uuid, Entity*, boost::hash<boost::uuids::uuid> > m_entities;
   std::unordered_map<std::string, EntityFactory*> m_factories;
   boost::uuids::random_generator m_uuidgen;
 };

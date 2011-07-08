@@ -42,16 +42,30 @@ Entity* EntityManager::createEntity(std::string classname)
   if (e) {
     e->m_type = classname;
     e->m_uuid = m_uuidgen();
+    m_entities.insert(std::make_pair(e->m_uuid, e));
   }
   return e;
 }
 
-void EntityManager::destroyEntity(Entity* e)
+void EntityManager::destroyEntity(boost::uuids::uuid id)
 {
-  if (e)
+  auto i = m_entities.find(id);
+  if (i != m_entities.end()) {
+    Entity* e = i->second;
+    m_entities.erase(i);
     for(auto i = e->m_components.begin(); i != e->m_components.end(); ++i)
       delete *i;
-  delete e;
+    delete e;
+  }
+}
+
+Entity* EntityManager::findEntity(boost::uuids::uuid id)
+{
+  auto i = m_entities.find(id);
+  if (i != m_entities.end())
+    return i->second;
+  else
+    return 0;
 }
 
 void EntityManager::addFactory(std::string classname, EntityFactory* fact)
