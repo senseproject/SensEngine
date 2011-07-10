@@ -22,7 +22,9 @@ CoordinateComponent::CoordinateComponent(Entity* owner)
 }
 
 CoordinateComponent::~CoordinateComponent()
-{}
+{
+  m_owner->m_coord = 0;
+}
 
 void CoordinateComponent::setParentTransform(glm::mat4 par2wor)
 {
