@@ -67,7 +67,7 @@ private:
 class EntityManager
 {
 public:
-  Entity* createEntity(std::string);
+  Entity* createEntity(std::string, boost::uuids::uuid* uuid=NULL);
   void destroyEntity(boost::uuids::uuid);
   Entity* findEntity(boost::uuids::uuid);
   

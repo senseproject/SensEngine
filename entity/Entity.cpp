@@ -36,12 +36,15 @@ void Component::sendMessage(const Message& m)
 EntityFactory::~EntityFactory()
 {}
 
-Entity* EntityManager::createEntity(std::string classname)
+Entity* EntityManager::createEntity(std::string classname, boost::uuids::uuid* uuid)
 {
   Entity* e =  m_factories[classname]->create();
   if (e) {
     e->m_type = classname;
-    e->m_uuid = m_uuidgen();
+    if(uuid)
+      e->m_uuid = *uuid;
+    else
+      e->m_uuid = m_uuidgen();
     m_entities.insert(std::make_pair(e->m_uuid, e));
   }
   return e;
