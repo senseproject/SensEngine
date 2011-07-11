@@ -19,3 +19,4 @@ struct PyEntity
 };
 
 extern PyTypeObject PyEntity_Type;
+extern PyObject* PyEntity_create(Entity*);

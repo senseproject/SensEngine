@@ -49,7 +49,7 @@ struct Entity
 // for the Entity instance.
 
 // Entity factories can have local data (hence the virtual destructor)
-// However, that local data should not effect the creation of an entity
+// However, that local data should not affect the creation of an entity
 // except in trivial ways (for example, randomly selecting between multiple
 // possible mesh designs)
 class EntityFactory

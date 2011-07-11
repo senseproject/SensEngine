@@ -109,8 +109,24 @@ static PyObject* PyEntityManager_add_factory(PyObject* self, PyObject* args)
   Py_RETURN_NONE;
 }
 
+static PyObject* PyEntityManager_create_entity(PyObject* self, PyObject* args)
+{
+  PyObject* classname;
+  if (!PyArg_ParseTuple(args, "U", &classname))
+    return 0;
+
+  PyObject* bytes = PyUnicode_AsUTF8String(classname);
+  if (!bytes)
+    return 0;
+
+  char* classstring = PyBytes_AsString(bytes);
+  Entity* e = ((PyEntityManager*)self)->mgr->createEntity(classstring);
+  return PyEntity_create(e);
+}
+
 static PyMethodDef PyEntityManager_methods[] = {
   {"add_factory", PyEntityManager_add_factory, METH_VARARGS, "Add a new entity factory for the given classname"},
+  {"create_entity", PyEntityManager_create_entity, METH_VARARGS, "Create a new entity from the given template"},
   {0, 0, 0, 0}
 };
 

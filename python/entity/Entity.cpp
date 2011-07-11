@@ -53,3 +53,10 @@ void initEntityClasses(PyObject* m)
   initEntityFactory(m);
   initComponentClasses(m);
 }
+
+PyObject* PyEntity_create(Entity* e)
+{
+  PyEntity* entity = (PyEntity*)PyEntity_Type.tp_alloc(&PyEntity_Type, 0);
+  entity->ent = e;
+  return (PyObject*)entity;
+}
