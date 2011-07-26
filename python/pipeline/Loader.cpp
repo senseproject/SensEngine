@@ -39,7 +39,7 @@ static PyObject *PyLoader_add_material(PyObject *self, PyObject *args) {
     return 0;
   }
   char *val = PyBytes_AsString(bytes);
-  ((PyLoader*)self)->loader->addMaterial(MaterialDef->def, val);
+//  ((PyLoader*)self)->loader->addMaterial(MaterialDef->def, val);
   Py_DECREF(bytes);
   Py_RETURN_NONE;
 }

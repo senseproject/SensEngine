@@ -26,13 +26,6 @@
 
 class SenseClient;
 
-struct Uniform
-{
-  UniformDef::Type type;
-  boost::any value;
-  GLint gl_id;
-};
-
 struct GlShader
 {
   GLuint refcnt;
@@ -53,12 +46,31 @@ struct ShaderProgram
   GlShader* frag;
 };
 
-struct Material
+struct ShaderSet
 {
-  GLuint refcnt;
-  std::vector<Uniform> uniforms;
-  ShaderProgram* program;
+  GlShader* vert;
+  GlShader* geom;
+  GlShader* frag;
 };
+
+inline bool operator==(const ShaderSet& lhs, const ShaderSet& rhs) {
+  return lhs.vert == rhs.vert && lhs.frag == rhs.frag && lhs.geom == rhs.geom;
+}
+
+namespace std {
+  template <>
+  struct hash<ShaderSet> : public unary_function<ShaderSet, size_t> {
+    size_t operator()(const ShaderSet& k) const {
+      size_t result = 0;
+      boost::hash_combine(result, k.vert);
+      boost::hash_combine(result, k.frag);
+      boost::hash_combine(result, k.geom);
+      return result;
+    }
+  };
+}
+
+struct Image;
 
 struct Texture
 {
@@ -69,6 +81,7 @@ struct Texture
   volatile GLuint biggest_mip_loaded;
   std::string name;
   GLint hres, vres;
+  Image* source;
 };
 
 struct RenderTarget
@@ -98,20 +111,11 @@ struct LoaderImpl
 {
   volatile bool finished;
   std::string shader_header;
-  std::unordered_map<std::string, MaterialDef> material_defs;
-  std::unordered_map<std::string, Material*> materials;
-//  std::unordered_map<std::string, std::weak_ptr<DrawBuffer>> meshes;
-  std::unordered_map<ShaderKey, ShaderProgram*> programs;
+  std::unordered_map<ShaderSet, ShaderProgram*> programs;
   std::unordered_map<std::string, GlShader*> shaders;
   std::unordered_map<std::string, Texture*> textures;
 
-  void buildMaterial(Material*, std::pair<std::string, MaterialDef>);
-  Texture* loadTexture(std::string);
-  Texture* loadWebview(std::string);
-  GlShader* loadShader(std::string, GlShader::Type);
-  ShaderProgram* loadProgram(ShaderKey);
-
-  void cleanupMaterial(Material*);
+  GlShader* loadShader(std::string, GLenum);
 };
 
 #endif // SENSE_PIPELINE_OGL_PIPELINE_P_HPP

@@ -26,21 +26,6 @@ DrawBuffer* Loader::loadMesh(DrawableMesh*)
 void Loader::releaseMesh(DrawBuffer*)
 {}
 
-Material* Loader::loadMaterial(std::string)
-{ return 0; }
-
-void Loader::releaseMaterial(Material*)
-{}
-
-void Loader::addMaterial(MaterialDef, std::string)
-{}
-
-void Loader::exec()
-{}
-
-void Loader::finish()
-{}
-
 Pipeline::Pipeline()
 {}
 

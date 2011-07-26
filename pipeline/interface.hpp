@@ -23,18 +23,16 @@
 struct DrawBuffer;
 struct Material;
 struct RenderTarget;
+struct Image;
 struct Lamp;
 
 struct LoaderImpl;
 struct PipelineImpl;
 
 struct DrawableMesh;
+struct ShaderProgram;
+struct Texture;
 
-class SenseClient;
-
-
-// TODO: move material handling to a higher level
-// TODO: add interfaces for shader programs and textures
 class Loader
 {
 public:
@@ -45,20 +43,15 @@ public:
   DrawBuffer* loadMesh(DrawableMesh*);
   void releaseMesh(DrawBuffer*);
 
-  // Load the textures and shaders associated with the given material
-  Material* loadMaterial(std::string name);
-  void releaseMaterial(Material*);
+  // Load the given shader strings into a GPU program.
+  ShaderProgram* loadProgram(std::string vert, std::string frag, std::string geom="");
+  void releaseProgram(ShaderProgram*);
 
-  // Add a material definition with the given name
-  void addMaterial(MaterialDef def, std::string name);
-
-  // If the Loader implementation is threaded, this will run the threaded proc
-  // If not, this must be implemented as an empty function.
-  void exec();
-
-  // If the Loader implementation is threaded, this signals the loader to terminate
-  // If not, this must be implemented as a no-op
-  void finish();
+  // Load the given image object into a GPU texture
+  Texture* loadTexture(Image*);
+  // perform any needed updates on the Texture object
+  void updateTexture(Texture*);
+  void releaseTexture(Texture*);
 
 private:
   LoaderImpl* self;

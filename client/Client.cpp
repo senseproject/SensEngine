@@ -28,7 +28,7 @@
 namespace fs = boost::filesystem;
 
 SenseClient::SenseClient()
-  : m_loader_init_complete(false), m_new_width(800), m_new_height(600), m_width(800), m_height(600)
+  : m_loader_init_complete(false), m_loader_finish(false), m_new_width(800), m_new_height(600), m_width(800), m_height(600)
 {
   m_manager = new EntityManager;
 
@@ -63,7 +63,7 @@ SenseClient::~SenseClient()
 {
   m_pipeline->destroyRenderTarget(framebuffer);
   if(m_pipeline->isLoaderThreaded()) {
-    m_loader->finish();
+    m_loader_finish = true;
     m_loader_thread.join();
     // m_loader is cleaned up at the end of its own thread
   } else {
@@ -101,7 +101,7 @@ void SenseClient::runLoaderThread()
   }
   m_loader_init_complete = true;
 
-  m_loader->exec();
+  while(!m_loader_finish);
 
   delete m_loader;
   platformFinishLoader();

@@ -50,129 +50,24 @@ Loader::Loader()
   ss << "#define SENSE_FRAG_OUTPUT_NOR 1" << std::endl;
   ss << std::endl;
   self->shader_header = ss.str();
-
-  MaterialDef m;
-  m.shaders.vert = "guiview";
-  m.shaders.frag = "guiview";
-  UniformDef u;
-  u.type = UniformDef::ModelView;
-  m.uniforms.insert(std::make_pair("modelview", u));
-  u.type = UniformDef::Projection;
-  m.uniforms.insert(std::make_pair("projection", u));
-  u.type = UniformDef::Texture;
-  u.value = std::string("__MISSING__");
-  m.uniforms.insert(std::make_pair("guitex", u));
-  addMaterial(m, "__MISSING__");
 }
 
 Loader::~Loader()
 {}
 
-void Loader::addMaterial(MaterialDef m, std::string n)
-{
-  auto i = self->material_defs.insert(std::make_pair(n, m));
-  auto it = self->materials.find(n);
-  if(it != self->materials.end()) {
-    self->cleanupMaterial(it->second);
-    self->buildMaterial(it->second, *(i.first));
-  }
-}
-
-void Loader::exec()
-{
-  while (!self->finished);
-}
-
-void Loader::finish()
-{
-  self->finished = true;  
-}
-
-void LoaderImpl::buildMaterial(Material* mat, std::pair<std::string, MaterialDef> matdef) {
-  mat->program = loadProgram(matdef.second.shaders);
-  GL_CHECK(glUseProgram(mat->program->gl_id))
-  for(auto i = matdef.second.uniforms.begin(); i != matdef.second.uniforms.end(); ++i) {
-    Uniform u;
-    u.gl_id = glGetUniformLocation(mat->program->gl_id, i->first.c_str());
-    if(u.gl_id == -1)
-      continue;
-    u.type = i->second.type;
-    switch(u.type) {
-    case UniformDef::Texture:
-      u.value = loadTexture(boost::any_cast<std::string>(i->second.value));
-      break;
-    case UniformDef::Webview:
-      u.type = UniformDef::Texture; // Webviews are a special class of texture, but the Pipeline doesn't need to know that!
-      u.value = loadWebview(boost::any_cast<std::string>(i->second.value));
-      break;
-    default:
-      break;
-    }
-    mat->uniforms.push_back(u);
-  }
-}
-
-Texture* LoaderImpl::loadTexture(std::string path) {
-  auto it = textures.find(path);
-  if(it != textures.end()) {
-    it->second->refcnt++;
-    return it->second;
-  }
-  
-  if(path == "__MISSING__") {
-    Texture *t = new Texture;
-    t->refcnt = 1;
-    t->name = path;
-    t->hres = 2;
-    t->vres = 2;
-    t->biggest_mip_loaded = 0;
-    GL_CHECK(glGenTextures(1, &(t->gl_id)));
-    GL_CHECK(glBindTexture(GL_TEXTURE_2D, t->gl_id));
-    GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 2, 2, 0, GL_RGBA, GL_UNSIGNED_BYTE, builtin_missingtex_data));
-    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
-    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
-    textures.insert(std::make_pair(path, t));
-    return t;
-  }
-
-  return loadTexture("__MISSING__");
-}
-
-Texture* LoaderImpl::loadWebview(std::string path) {
-  return loadTexture("__MISSING__");
-//   boost::filesystem::path html_path = boost::filesystem::current_path() / "../data/html" / path;
-//   Webview* w = new Webview("file://"+html_path.string(), 800, 600);
-//   return w;
-}
-
-GlShader* LoaderImpl::loadShader(std::string path, GlShader::Type type) {
-  if(path.empty())
+GlShader* LoaderImpl::loadShader(std::string shader_source, GLenum gl_shader_type) {
+  if(shader_source.empty())
     return NULL;
 
-  auto it = shaders.find(path);
+  auto it = shaders.find(shader_source);
   if(it != shaders.end()) {
     it->second->refcnt++;
     return it->second;
   }
 
-  GLenum gl_shader_type;
-  switch(type) {
-  case GlShader::Vertex: gl_shader_type = GL_VERTEX_SHADER; break;
-  case GlShader::Fragment: gl_shader_type = GL_FRAGMENT_SHADER; break;
-  case GlShader::Geometry: gl_shader_type = GL_GEOMETRY_SHADER; break;
-  }
-
   GlShader* shader = new GlShader;
   shader->refcnt = 1;
   shader->gl_id = GL_CHECK(glCreateShader(gl_shader_type))
-  boost::filesystem::ifstream stream;
-  stream.exceptions(std::ifstream::badbit | std::ifstream::failbit | std::ifstream::eofbit);
-  boost::filesystem::path shader_path("../data/shaders");
-  shader_path = shader_path / path;
-  if(!exists(shader_path))
-    throw std::runtime_error("Can't find shader file "+shader_path.string());
-  stream.open(shader_path);
-  std::string shader_source((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
   const char* sources[2];
   sources[0] = shader_header.c_str();
   sources[1] = shader_source.c_str();
@@ -187,39 +82,48 @@ GlShader* LoaderImpl::loadShader(std::string path, GlShader::Type type) {
     GL_CHECK(glGetShaderInfoLog(shader->gl_id, info_log_length, &info_log_length, log))
     std::string infolog = log;
     delete[] log;
-    throw std::runtime_error("Error compiling shader " + shader_path.string() + ":\n" + infolog);
+    throw std::runtime_error("Error compiling shader:\n" + infolog);
   }
   
   return shader;
 }
 
-ShaderProgram* LoaderImpl::loadProgram(ShaderKey key) {
-  auto it = programs.find(key);
-  if(it != programs.end()) {
-    it->second->refcnt++;
-    return it->second;
+ShaderProgram* Loader::loadProgram(std::string vert, std::string frag, std::string geom) {
+  ShaderSet s;
+  s.vert = self->loadShader(vert, GL_VERTEX_SHADER);
+  s.frag = self->loadShader(frag, GL_FRAGMENT_SHADER);
+  s.geom = self->loadShader(geom, GL_GEOMETRY_SHADER);
+
+  auto it = self->programs.find(s);
+  if(it != self->programs.end()) {
+    ShaderProgram* prog = it->second;
+    prog->refcnt++;
+    return prog;
   }
-  
+
   ShaderProgram* prog = new ShaderProgram;
   prog->refcnt = 1;
-  prog->gl_id = GL_CHECK(glCreateProgram())
-  if(!key.frag.empty())
-    prog->frag = loadShader(key.frag+".fs", GlShader::Fragment);
+  prog->gl_id = GL_CHECK(glCreateProgram());
+  prog->vert = s.vert;
+  prog->geom = s.geom;
+  prog->frag = s.frag;
+  if(s.vert)
+    s.vert->refcnt++;
   else
-    throw std::runtime_error("Programs must have at least a vertex and fragment shader (missing fragment)");
-  if(!key.vert.empty())
-    prog->vert = loadShader(key.vert+".vs", GlShader::Vertex);
+    throw std::runtime_error("OpenGL Programs must have at least a vertex and fragment shader (missing fragment)");
+  if(s.frag)
+    s.frag->refcnt++;
   else
-    throw std::runtime_error("Programs must have at least a vertex and fragment shader (missing vertex)");
-  if(!key.geom.empty())
-    prog->geom = loadShader(key.geom+".gs", GlShader::Geometry);
+    throw std::runtime_error("OpenGL Programs must have at least a vertex and fragment shader (missing vertex)");
+  if(s.geom)
+    s.geom->refcnt++;
+  prog->vert = s.vert;
+  prog->geom = s.geom;
+  prog->frag = s.frag;
   GL_CHECK(glAttachShader(prog->gl_id, prog->vert->gl_id))
   if (prog->geom) {
-    prog->geom->refcnt++;
     GL_CHECK(glAttachShader(prog->gl_id, prog->geom->gl_id))
   }
-  prog->vert->refcnt++;
-  prog->frag->refcnt++;
   GL_CHECK(glAttachShader(prog->gl_id, prog->frag->gl_id))
   GL_CHECK(glLinkProgram(prog->gl_id))
   int link_status;
@@ -233,17 +137,6 @@ ShaderProgram* LoaderImpl::loadProgram(ShaderKey key) {
     delete[] log;
     throw std::runtime_error("Error linking program: \n" + infolog);
   }
-  programs.insert(std::make_pair(key, prog));
+  self->programs.insert(std::make_pair(s, prog));
   return prog;
-}
-
-void LoaderImpl::cleanupMaterial(Material* mat) 
-{
-  // This function intentionally does very little. Programs and
-  // Textures are left around until memory is needed
-  mat->program->refcnt--;
-  for(auto i = mat->uniforms.begin(); i != mat->uniforms.end(); ++i) {
-    if (i->type == UniformDef::Texture)
-      boost::any_cast<Texture*>(i->value)->refcnt--;
-  }
 }

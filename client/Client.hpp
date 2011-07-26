@@ -70,6 +70,7 @@ private:
   RenderTarget* framebuffer;
   boost::thread m_loader_thread;
   volatile bool m_loader_init_complete;
+  volatile bool m_loader_finish;
   std::string loader_error_string;
 
   // Information about the client window
