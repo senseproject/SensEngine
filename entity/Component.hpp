@@ -15,7 +15,7 @@
 #ifndef SENSE_ENTITY_COMPONENT_HPP
 #define SENSE_ENTITY_COMPONENT_HPP
 
-class Entity;
+struct Entity;
 class Message;
 
 class Component
