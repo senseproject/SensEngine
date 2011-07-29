@@ -27,6 +27,7 @@
 
 class Pipeline;
 class Loader;
+class DataManager;
 class EntityManager;
 
 struct RenderTarget;
@@ -62,16 +63,16 @@ private:
   const char* displayName();
 
   // general members
+  DataManager* m_datamgr;
   EntityManager* m_manager;
+  boost::thread m_loader_thread;
+  volatile bool m_loader_init_complete;
+  std::string loader_error_string;
   
   // Pipeline related members
   Pipeline* m_pipeline;
   Loader* m_loader;
   RenderTarget* framebuffer;
-  boost::thread m_loader_thread;
-  volatile bool m_loader_init_complete;
-  volatile bool m_loader_finish;
-  std::string loader_error_string;
 
   // Information about the client window
   uint32_t m_new_width, m_new_height;

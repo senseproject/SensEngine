@@ -135,11 +135,6 @@ void Pipeline::setViewport(uint32_t width, uint32_t height)
   GL_CHECK(glViewport(0, 0, width, height));
 }
 
-bool Pipeline::isLoaderThreaded()
-{
-  return true;
-}
-
 Loader* Pipeline::createLoader()
 {
   return new Loader;

@@ -54,10 +54,12 @@ SET(SENSE_client_srcs
   client/Client.cpp
   client/Client_${PLATFORM}_${PIPELINE}.cpp
   ${CMAKE_CURRENT_BINARY_DIR}/client/Client_config.cpp
+  client/DataManager.cpp
 )
 
 SET(SENSE_client_hdrs
   client/Client.hpp
+  client/DataManager.hpp
 )
 
 SET(SENSE_pipeline_srcs

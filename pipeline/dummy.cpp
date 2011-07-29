@@ -56,8 +56,5 @@ void Pipeline::setRenderTarget(RenderTarget*)
 void Pipeline::setViewport(uint32_t, uint32_t)
 {}
 
-bool Pipeline::isLoaderThreaded()
-{ return false; }
-
 Loader* Pipeline::createLoader()
 { return 0; }

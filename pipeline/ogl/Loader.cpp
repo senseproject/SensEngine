@@ -140,3 +140,7 @@ ShaderProgram* Loader::loadProgram(std::string vert, std::string frag, std::stri
   self->programs.insert(std::make_pair(s, prog));
   return prog;
 }
+
+bool Loader::isThreaded() {
+  return true;
+}

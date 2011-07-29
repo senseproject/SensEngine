@@ -53,6 +53,8 @@ public:
   void updateTexture(Texture*);
   void releaseTexture(Texture*);
 
+  static bool isThreaded();
+
 private:
   LoaderImpl* self;
 };
@@ -93,10 +95,6 @@ public:
 
   // Set the region of the window to render to
   void setViewport(uint32_t width, uint32_t height);
-
-  // Check if the loader is threaded.
-  // This information is in the Pipeline, rather than the Loader, because the info may be needed for platform init before the Loader is created
-  bool isLoaderThreaded();
 
   // Create a Loader instance to go with this Pipeline
   Loader* createLoader();
