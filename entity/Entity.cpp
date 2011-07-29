@@ -38,6 +38,8 @@ EntityFactory::~EntityFactory()
 
 Entity* EntityManager::createEntity(std::string classname, boost::uuids::uuid* uuid)
 {
+  if(m_factories.find(classname) == m_factories.end())
+    return NULL;
   Entity* e =  m_factories[classname]->create();
   if (e) {
     e->m_type = classname;
