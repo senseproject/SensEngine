@@ -36,9 +36,9 @@ Loader::Loader()
   std::stringstream ss;
   unsigned int num_instances = 64; // TODO: fetch from config system
   ss << "#version 150" << std::endl;
-  ss << "#extension GL_ARB_explicit_attrib_location : require" << std::endl;
+//  ss << "#extension GL_ARB_explicit_attrib_location : require" << std::endl;
   ss << "#define SENSE_MAX_INSTANCES " << num_instances << std::endl;
-  ss << "#define SENSE_VERT_INPUT_POS " << DrawableMesh::Pos << std::endl;
+/*  ss << "#define SENSE_VERT_INPUT_POS " << DrawableMesh::Pos << std::endl;
   ss << "#define SENSE_VERT_INPUT_NOR " << DrawableMesh::Nor << std::endl;
   ss << "#define SENSE_VERT_INPUT_TAN " << DrawableMesh::Tan << std::endl;
   ss << "#define SENSE_VERT_INPUT_COL " << DrawableMesh::Col << std::endl;
@@ -47,7 +47,7 @@ Loader::Loader()
   ss << "#define SENSE_VERT_INPUT_SKINIDX " << DrawableMesh::SkinIdx << std::endl;
   ss << "#define SENSE_VERT_INPUT_SKINWEIGHT " << DrawableMesh::SkinWeight << std::endl;
   ss << "#define SENSE_FRAG_OUTPUT_COL 0" << std::endl;
-  ss << "#define SENSE_FRAG_OUTPUT_NOR 1" << std::endl;
+  ss << "#define SENSE_FRAG_OUTPUT_NOR 1" << std::endl; */
   ss << std::endl;
   self->shader_header = ss.str();
 }
@@ -125,6 +125,18 @@ ShaderProgram* Loader::loadProgram(std::string vert, std::string frag, std::stri
     GL_CHECK(glAttachShader(prog->gl_id, prog->geom->gl_id))
   }
   GL_CHECK(glAttachShader(prog->gl_id, prog->frag->gl_id))
+
+  GL_CHECK(glBindFragDataLocation(prog->gl_id, 0, "fcol"))
+  GL_CHECK(glBindFragDataLocation(prog->gl_id, 1, "fnor"))
+  GL_CHECK(glBindAttribLocation(prog->gl_id, DrawableMesh::Pos, "pos"))
+  GL_CHECK(glBindAttribLocation(prog->gl_id, DrawableMesh::Nor, "nor"))
+  GL_CHECK(glBindAttribLocation(prog->gl_id, DrawableMesh::Tan, "tan"))
+  GL_CHECK(glBindAttribLocation(prog->gl_id, DrawableMesh::Col, "col"))
+  GL_CHECK(glBindAttribLocation(prog->gl_id, DrawableMesh::Te0, "te0"))
+  GL_CHECK(glBindAttribLocation(prog->gl_id, DrawableMesh::Te1, "te1"))
+  GL_CHECK(glBindAttribLocation(prog->gl_id, DrawableMesh::SkinIdx, "ski"))
+  GL_CHECK(glBindAttribLocation(prog->gl_id, DrawableMesh::SkinWeight, "skw"))
+
   GL_CHECK(glLinkProgram(prog->gl_id))
   int link_status;
   GL_CHECK(glGetProgramiv(prog->gl_id, GL_LINK_STATUS, &link_status))
