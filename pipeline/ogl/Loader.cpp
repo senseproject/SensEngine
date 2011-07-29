@@ -31,8 +31,6 @@ Texture::~Texture()
 Loader::Loader()
   : self(new LoaderImpl)
 {
-  self->finished = false;
-
   std::stringstream ss;
   unsigned int num_instances = 64; // TODO: fetch from config system
   ss << "#version 150" << std::endl;

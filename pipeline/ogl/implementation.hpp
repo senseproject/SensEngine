@@ -109,7 +109,6 @@ struct PipelineImpl
 
 struct LoaderImpl
 {
-  volatile bool finished;
   std::string shader_header;
   std::unordered_map<ShaderSet, ShaderProgram*> programs;
   std::unordered_map<std::string, GlShader*> shaders;
