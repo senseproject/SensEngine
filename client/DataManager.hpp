@@ -45,6 +45,7 @@ private:
 
   std::unordered_map<std::string, Material*> m_materials;
   std::unordered_map<std::string, MaterialDef> m_matdefs;
+  std::unordered_map<std::string, std::string> m_shaderstrings;
 
   void buildMaterial(std::string);
   std::string loadShaderString(std::string);

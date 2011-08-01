@@ -87,11 +87,17 @@ void DataManager::buildMaterial(std::string name)
 
 std::string DataManager::loadShaderString(std::string name)
 {
+  auto i = m_shaderstrings.find(name);
+  if(i != m_shaderstrings.end())
+    return i->second;
+
   boost::filesystem::path shader_path("../data/shaders");
   shader_path = shader_path / name;
   if(!exists(shader_path))
     throw std::runtime_error("Can't find shader file " + shader_path.string());
   boost::filesystem::ifstream stream;
   stream.open(shader_path);
-  return std::string(std::istreambuf_iterator<char>(stream), std::istreambuf_iterator<char>());
+  std::string shader =  std::string(std::istreambuf_iterator<char>(stream), std::istreambuf_iterator<char>());
+  m_shaderstrings.insert(std::make_pair(name, shader));
+  return shader;
 }
