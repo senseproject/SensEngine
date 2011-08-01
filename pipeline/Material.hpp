@@ -12,9 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-struct PyLoader {
-  PyObject_HEAD;
-  Loader* loader;
+#ifndef SENSE_PIPELINE_MATERIAL_HPP
+#define SENSE_PIPELINE_MATERIAL_HPP
+
+#include "DefinitionTypes.hpp"
+
+struct ShaderProgram;
+
+struct Uniform
+{
+  UniformDef::Type type;
+  boost::any value;
+  boost::any pipe_id;
 };
 
-extern PyObject* PyLoader_create(Loader*);
+struct Material
+{
+  ShaderProgram* shaders;
+  std::vector<Uniform> uniforms;
+  uint32_t refcnt;
+};
+
+
+#endif // SENSE_PIPELINE_MATERIAL_HPP

@@ -76,8 +76,15 @@ SET(SENSE_python_srcs
   python/module.cpp
 )
 
+SET(SENSE_python_client_srcs
+  python/client/DataManager.cpp
+)
+
+SET(SENSE_python_client_hdrs
+  python/client/PyDataManager.hpp
+)
+
 SET(SENSE_python_pipeline_srcs
-  python/pipeline/Loader.cpp
   python/pipeline/MaterialDefinition.cpp
 )
 
@@ -133,6 +140,7 @@ ADD_LIBRARY(SenseCore
             ${SENSE_pipeline_srcs} ${SENSE_pipeline_hdrs}
             ${SENSE_python_srcs} ${SENSE_python_hdrs}
             ${SENSE_python_entity_srcs} ${SENSE_python_entity_hdrs}
+            ${SENSE_python_client_srcs} ${SENSE_python_client_hdrs}
             ${SENSE_python_pipeline_srcs} ${SENSE_python_pipeline_hdrs}
             ${SENSE_util_hdrs}
 )

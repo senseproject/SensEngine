@@ -15,7 +15,10 @@
 #ifndef SENSE_CLIENT_DATAMANAGER_HPP
 #define SENSE_CLIENT_DATAMANAGER_HPP
 
+#include "pipeline/DefinitionTypes.hpp"
+
 #include <unordered_map>
+#include <string>
 
 class Loader;
 class Material;
@@ -34,12 +37,17 @@ public:
   void mainThreadTick();
 
   Material* loadMaterial(std::string);
+  void addMaterial(MaterialDef, std::string);
 
 private:
   Loader* m_loader;
   volatile bool m_finished;
 
   std::unordered_map<std::string, Material*> m_materials;
+  std::unordered_map<std::string, MaterialDef> m_matdefs;
+
+  void buildMaterial(std::string);
+  std::string loadShaderString(std::string);
 };
 
 

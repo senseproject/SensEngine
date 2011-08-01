@@ -44,6 +44,7 @@ public:
   void releaseMesh(DrawBuffer*);
 
   // Load the given shader strings into a GPU program.
+  boost::any queryUniform(ShaderProgram* prog, std::string uni);
   ShaderProgram* loadProgram(std::string vert, std::string frag, std::string geom="");
   void releaseProgram(ShaderProgram*);
 

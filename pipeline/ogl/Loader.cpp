@@ -86,6 +86,11 @@ GlShader* LoaderImpl::loadShader(std::string shader_source, GLenum gl_shader_typ
   return shader;
 }
 
+boost::any Loader::queryUniform(ShaderProgram* prog, std::string name)
+{
+  return glGetUniformLocation(prog->gl_id, name.c_str());
+}
+
 ShaderProgram* Loader::loadProgram(std::string vert, std::string frag, std::string geom) {
   ShaderSet s;
   s.vert = self->loadShader(vert, GL_VERTEX_SHADER);
@@ -149,6 +154,12 @@ ShaderProgram* Loader::loadProgram(std::string vert, std::string frag, std::stri
   }
   self->programs.insert(std::make_pair(s, prog));
   return prog;
+}
+
+void Loader::releaseProgram(ShaderProgram* program)
+{
+  program->refcnt--;
+  // No actual resource freeing is done yet. Garbage collection is handled when needed.
 }
 
 bool Loader::isThreaded() {

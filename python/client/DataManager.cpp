@@ -14,18 +14,19 @@
 
 #include "python/module.hpp"
 #include "python/pywarnings.hpp"
-#include "pipeline/interface.hpp"
+#include "client/DataManager.hpp"
+#include "pipeline/DefinitionTypes.hpp"
 
-#include "PyMaterialDef.hpp"
-#include "PyLoader.hpp"
+#include "../pipeline/PyMaterialDef.hpp"
+#include "PyDataManager.hpp"
 
-static PyObject * Loader_new(PyTypeObject*, PyObject*, PyObject*) 
+static PyObject * DataManager_new(PyTypeObject*, PyObject*, PyObject*) 
 {
-  PyErr_SetString(PyExc_TypeError, "Loader objects cannot be created by python code");
+  PyErr_SetString(PyExc_TypeError, "DataManager objects cannot be created by python code");
   return NULL;
 }
 
-static PyObject *PyLoader_add_material(PyObject *self, PyObject *args) {
+static PyObject *PyDataManager_add_material(PyObject *self, PyObject *args) {
   PyMaterialDef *MaterialDef;
   PyObject *MaterialName;
   if(!PyArg_ParseTuple(args, "OU", &MaterialDef, &MaterialName))
@@ -39,20 +40,20 @@ static PyObject *PyLoader_add_material(PyObject *self, PyObject *args) {
     return 0;
   }
   char *val = PyBytes_AsString(bytes);
-//  ((PyLoader*)self)->loader->addMaterial(MaterialDef->def, val);
+  ((PyDataManager*)self)->loader->addMaterial(MaterialDef->def, val);
   Py_DECREF(bytes);
   Py_RETURN_NONE;
 }
 
-static PyMethodDef PyLoader_methods[] = {
-  {"add_material", PyLoader_add_material, METH_VARARGS, "Add (or replace) a material definition"},
+static PyMethodDef PyDataManager_methods[] = {
+  {"add_material", PyDataManager_add_material, METH_VARARGS, "Add (or replace) a material definition"},
   {0, 0, 0, 0}
 };
 
-PyTypeObject PyLoader_Type = {
+PyTypeObject PyDataManager_Type = {
   PyObject_HEAD_INIT(0)
-  "SensEngine.Loader",
-  sizeof(PyLoader),
+  "SensEngine.DataManager",
+  sizeof(PyDataManager),
   0,
   0,
   0, 0, 0, 0, 0, 0, 0,
@@ -60,23 +61,23 @@ PyTypeObject PyLoader_Type = {
   Py_TPFLAGS_DEFAULT,
   "SensEngine data loader",
   0, 0, 0, 0, 0, 0,
-  PyLoader_methods,
+  PyDataManager_methods,
   0, 0, 0, 0, 0,
   0, 0, 0, 0,
-  Loader_new
+  DataManager_new
 };
 
-void initLoader(PyObject* m)
+void initDataManager(PyObject* m)
 {
-  if(PyType_Ready(&PyLoader_Type) < 0)
+  if(PyType_Ready(&PyDataManager_Type) < 0)
     return;
-  Py_INCREF(&PyLoader_Type);
-  PyModule_AddObject(m, "Loader", (PyObject*)&PyLoader_Type);
+  Py_INCREF(&PyDataManager_Type);
+  PyModule_AddObject(m, "DataManager", (PyObject*)&PyDataManager_Type);
 }
 
-PyObject* PyLoader_create(Loader* l)
+PyObject* PyDataManager_create(DataManager* l)
 {
-  PyLoader* loader = (PyLoader*)PyLoader_Type.tp_alloc(&PyLoader_Type, 0);
+  PyDataManager* loader = (PyDataManager*)PyDataManager_Type.tp_alloc(&PyDataManager_Type, 0);
   loader->loader = l;
   return (PyObject*)loader;
 }
