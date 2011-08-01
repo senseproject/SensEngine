@@ -15,11 +15,14 @@
 #ifndef SENSE_CLIENT_DATAMANAGER_HPP
 #define SENSE_CLIENT_DATAMANAGER_HPP
 
+#include <unordered_map>
+
 class Loader;
+class Material;
 
 // The data manager loads anything that exists inside
 // a game data package. It should be run on a worker thread,
-// and "mainThreadTick" should be called every frame.
+// and "mainThreadTick" should be called every frame in the main rendering thread.
 class DataManager
 {
 public:
@@ -30,9 +33,13 @@ public:
   void finish();
   void mainThreadTick();
 
+  Material* loadMaterial(std::string);
+
 private:
   Loader* m_loader;
   volatile bool m_finished;
+
+  std::unordered_map<std::string, Material*> m_materials;
 };
 
 
