@@ -21,6 +21,10 @@
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
 
+enum {
+  BUILD_MATERIAL
+};
+
 DataManager::DataManager(Loader* loader)
   : m_loader(loader)
 {}
@@ -30,9 +34,20 @@ DataManager::~DataManager()
 
 void DataManager::exec()
 {
+  using boost::any_cast;
+
   m_finished = false;
-  while(!m_finished)
+  job j;
+  while(!m_finished) {
+    while(m_jobs.try_pop(j)) {
+      switch(j.first) {
+      case BUILD_MATERIAL:
+	buildMaterial(any_cast<std::string>(j.second));
+	break;
+      }
+    }
     boost::this_thread::yield();
+  }
 }
 
 void DataManager::finish()
@@ -43,12 +58,31 @@ void DataManager::finish()
 void DataManager::mainThreadTick()
 {}
 
+Material* DataManager::loadMaterial(std::string name)
+{
+  auto i = m_materials.find(name);
+  if(i != m_materials.end()) {
+    i->second->refcnt++;
+    return i->second;
+  } else {
+    Material* m = new Material;
+    m->shaders = 0;
+    m->refcnt = 0;
+    m_materials.insert(std::make_pair(name, m));
+    m_jobs.push(job(BUILD_MATERIAL, name));
+    return m;
+  }
+}
+
 void DataManager::addMaterial(MaterialDef def, std::string name)
 {
   bool inserted = m_matdefs.insert(std::make_pair(name, def)).second;
   if(!inserted) {
     m_matdefs[name] = def;
-    buildMaterial(name);
+    if(m_materials.find(name) != m_materials.end()) {
+      // there are instances of this material. Reload the sucker!
+      m_jobs.push(job(BUILD_MATERIAL, name));
+    }
   }
 }
 
@@ -75,18 +109,21 @@ void DataManager::buildMaterial(std::string name)
   if(i != m_materials.end()) {
     m = i->second;
     m_loader->releaseProgram(m->shaders);
-  }
-  else {
+  } else {
+    // This *should* never be a valid codepath. But just in case...
     m = new Material;
     m->refcnt = 0;
     m_materials.insert(std::make_pair(name, m));
   }
-  m->shaders = s;
   m->uniforms = uniforms;
+  m->shaders = s;
 }
 
 std::string DataManager::loadShaderString(std::string name)
 {
+  if(name.size() == 3 && name[0] == '.' && name[2] == 's' &&
+     ( name[1] == 'f' || name[1] == 'v' || name[1] == 'g'))
+    return ""; // empty shader name means empty shader string
   auto i = m_shaderstrings.find(name);
   if(i != m_shaderstrings.end())
     return i->second;

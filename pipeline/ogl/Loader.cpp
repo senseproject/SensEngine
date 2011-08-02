@@ -158,7 +158,8 @@ ShaderProgram* Loader::loadProgram(std::string vert, std::string frag, std::stri
 
 void Loader::releaseProgram(ShaderProgram* program)
 {
-  program->refcnt--;
+  if(program)
+    program->refcnt--;
   // No actual resource freeing is done yet. Garbage collection is handled when needed.
 }
 

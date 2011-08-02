@@ -17,6 +17,8 @@
 
 #include "pipeline/DefinitionTypes.hpp"
 
+#include "util/queue.hpp"
+
 #include <unordered_map>
 #include <string>
 
@@ -49,6 +51,10 @@ private:
 
   void buildMaterial(std::string);
   std::string loadShaderString(std::string);
+
+  void pushJob(unsigned int, boost::any);
+  typedef std::pair<unsigned int, boost::any> job;
+  queue<job> m_jobs;
 };
 
 
