@@ -203,6 +203,8 @@ void SenseClient::platformInitLoader()
         glXDestroyContext(dpy, ctx);
         throw std::runtime_error("Loader context cannot be indirect");
       }
+
+      glXMakeContextCurrent(dpy, pb, pb, ctx);
     } catch (std::exception&) {
       glXDestroyPbuffer(dpy, pb);
       throw;
@@ -210,7 +212,7 @@ void SenseClient::platformInitLoader()
   } catch (std::exception&) {
     XCloseDisplay(dpy);
     throw;
-  }      
+  }
 }
 
 void SenseClient::platformFinish() 
