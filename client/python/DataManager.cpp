@@ -17,7 +17,7 @@
 #include "client/DataManager.hpp"
 #include "pipeline/DefinitionTypes.hpp"
 
-#include "../pipeline/PyMaterialDef.hpp"
+#include "python/pipeline/PyMaterialDef.hpp"
 #include "PyDataManager.hpp"
 
 static PyObject * DataManager_new(PyTypeObject*, PyObject*, PyObject*) 
@@ -52,7 +52,7 @@ static PyMethodDef PyDataManager_methods[] = {
 
 PyTypeObject PyDataManager_Type = {
   PyObject_HEAD_INIT(0)
-  "SensEngine.DataManager",
+  "SensEngine.client.DataManager",
   sizeof(PyDataManager),
   0,
   0,

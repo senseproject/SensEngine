@@ -23,7 +23,7 @@
 #include <string>
 
 class Loader;
-class Material;
+struct Material;
 
 // The data manager loads anything that exists inside
 // a game data package. It should be run on a worker thread,

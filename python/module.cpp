@@ -16,7 +16,6 @@
 #include "pywarnings.hpp"
 
 extern void initMaterialDefinition(PyObject*);
-extern void initDataManager(PyObject*);
 extern void initEntityClasses(PyObject*);
 
 PyModuleDef SenseModule = {
@@ -30,7 +29,6 @@ PyMODINIT_FUNC initSensEngine() {
   PyObject *m = PyModule_Create(&SenseModule);
   PyModule_AddStringConstant(m, "__path__", "SensEngine");
   initMaterialDefinition(m);
-  initDataManager(m);
   initEntityClasses(m);
   return m;
 }

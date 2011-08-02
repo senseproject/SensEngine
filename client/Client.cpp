@@ -18,7 +18,7 @@
 #include "Client.hpp"
 #include "DataManager.hpp"
 
-#include "python/client/PyDataManager.hpp"
+#include "python/PyDataManager.hpp"
 #include "python/entity/api.hpp"
 
 #include "entity/Entity.hpp"
@@ -118,6 +118,7 @@ void SenseClient::setupPythonModule()
   PyObject* SensModule = PyImport_ImportModule("SensEngine");
   PyObject* m = PyImport_AddModule("SensEngine.client");
   PyModule_AddObject(m, "__builtins__", PyEval_GetBuiltins());
+  initDataManager(m);
   PyModule_AddObject(m, "loader", PyDataManager_create(m_datamgr));
   PyModule_AddObject(m, "manager", PyEntityManager_create(m_manager));
   PyModule_AddObject(SensModule, "client", m);

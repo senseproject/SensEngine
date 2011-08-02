@@ -62,6 +62,14 @@ SET(SENSE_client_hdrs
   client/DataManager.hpp
 )
 
+SET(SENSE_client_python_srcs
+  client/python/DataManager.cpp
+)
+
+SET(SENSE_client_python_hdrs
+  client/python/PyDataManager.hpp
+)
+
 SET(SENSE_pipeline_srcs
   pipeline/Builtins.cpp
 )
@@ -70,18 +78,11 @@ SET(SENSE_pipeline_hdrs
   pipeline/interface.hpp
   pipeline/Drawable.hpp
   pipeline/Builtins.hpp
+  pipeline/Material.hpp
 )
 
 SET(SENSE_python_srcs
   python/module.cpp
-)
-
-SET(SENSE_python_client_srcs
-  python/client/DataManager.cpp
-)
-
-SET(SENSE_python_client_hdrs
-  python/client/PyDataManager.hpp
 )
 
 SET(SENSE_python_pipeline_srcs
@@ -140,7 +141,6 @@ ADD_LIBRARY(SenseCore
             ${SENSE_pipeline_srcs} ${SENSE_pipeline_hdrs}
             ${SENSE_python_srcs} ${SENSE_python_hdrs}
             ${SENSE_python_entity_srcs} ${SENSE_python_entity_hdrs}
-            ${SENSE_python_client_srcs} ${SENSE_python_client_hdrs}
             ${SENSE_python_pipeline_srcs} ${SENSE_python_pipeline_hdrs}
             ${SENSE_util_hdrs}
 )
@@ -152,7 +152,7 @@ IF(CMAKE_COMPILER_IS_GNUCXX)
   SET_TARGET_PROPERTIES(SenseDummyPipe PROPERTIES COMPILE_FLAGS "-fPIC" LINK_FLAGS "-fPIC")
 ENDIF(CMAKE_COMPILER_IS_GNUCXX)
 
-ADD_EXECUTABLE(SensEngine WIN32 main.cpp ${SENSE_client_srcs} ${SENSE_client_hdrs})
+ADD_EXECUTABLE(SensEngine WIN32 main.cpp ${SENSE_client_srcs} ${SENSE_client_hdrs} ${SENSE_client_python_srcs} ${SENSE_client_python_hdrs})
 IF(MSVC)
   SET_TARGET_PROPERTIES(SensEngine PROPERTIES LINK_FLAGS "/ENTRY:mainCRTStartup")
 ENDIF(MSVC)
@@ -171,4 +171,5 @@ SOURCE_GROUP("python\\pipeline" FILES ${SENSE_python_pipeline_srcs} ${SENSE_pyth
 SOURCE_GROUP("python\\entity" FILES ${SENSE_python_entity_srcs} ${SENSE_python_entity_hdrs})
 SOURCE_GROUP("util" FILES ${SENSE_util_hdrs})
 SOURCE_GROUP("entity" FILES ${SENSE_entity_srcs} ${SENSE_entity_hdrs})
-SOURCE_GROUP("client" FILES ${SENSE_client_srcs} ${SENSE_client_hdrs})
+
+SOURCE_GROUP("python" FILES ${SENSE_client_python_srcs} ${SENSE_client_python_hdrs})
