@@ -58,7 +58,7 @@ public:
 #define GL_CHECK(func) func; { GLenum glerr = glGetError(); if(GL_NO_ERROR != glerr) throw gl_error(FILE_LINE, glerr); }
 #define FBO_CHECK { GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER); if(GL_FRAMEBUFFER_COMPLETE != status) throw fbo_error(FILE_LINE, status); }
 #else
-#define GL_CHECK(func) func;
+#define GL_CHECK(func) func
 #define FBO_CHECK
 #endif
 

@@ -51,19 +51,19 @@ GlShader* LoaderImpl::loadShader(std::string shader_source, GLenum gl_shader_typ
 
   GlShader* shader = new GlShader;
   shader->refcnt = 1;
-  shader->gl_id = GL_CHECK(glCreateShader(gl_shader_type))
+  shader->gl_id = GL_CHECK(glCreateShader(gl_shader_type));
   const char* sources[2];
   sources[0] = shader_header.c_str();
   sources[1] = shader_source.c_str();
-  GL_CHECK(glShaderSource(shader->gl_id, 2, sources, 0))
-  GL_CHECK(glCompileShader(shader->gl_id))
+  GL_CHECK(glShaderSource(shader->gl_id, 2, sources, 0));
+  GL_CHECK(glCompileShader(shader->gl_id));
   int compile_status;
-  GL_CHECK(glGetShaderiv(shader->gl_id, GL_COMPILE_STATUS, &compile_status))
+  GL_CHECK(glGetShaderiv(shader->gl_id, GL_COMPILE_STATUS, &compile_status));
   if(compile_status == GL_FALSE) {
     int info_log_length;
-    GL_CHECK(glGetShaderiv(shader->gl_id, GL_INFO_LOG_LENGTH, &info_log_length))
+    GL_CHECK(glGetShaderiv(shader->gl_id, GL_INFO_LOG_LENGTH, &info_log_length));
     char *log = new char[info_log_length];
-    GL_CHECK(glGetShaderInfoLog(shader->gl_id, info_log_length, &info_log_length, log))
+    GL_CHECK(glGetShaderInfoLog(shader->gl_id, info_log_length, &info_log_length, log));
     std::string infolog = log;
     delete[] log;
     throw std::runtime_error("Error compiling shader:\n" + infolog);
@@ -75,10 +75,10 @@ GlShader* LoaderImpl::loadShader(std::string shader_source, GLenum gl_shader_typ
 void Loader::loadMesh(DrawableMesh* m)
 {
   GLuint vtx_buf, idx_buf=0;
-  GLenum idx_type;
-  GL_CHECK(glGenBuffers(1, &vtx_buf))
-  GL_CHECK(glBindBuffer(GL_COPY_WRITE_BUFFER, vtx_buf))
-  GL_CHECK(glBufferData(GL_COPY_WRITE_BUFFER, m->data_size, m->data, GL_STATIC_DRAW))
+  GLenum idx_type = 0;
+  GL_CHECK(glGenBuffers(1, &vtx_buf));
+  GL_CHECK(glBindBuffer(GL_COPY_WRITE_BUFFER, vtx_buf));
+  GL_CHECK(glBufferData(GL_COPY_WRITE_BUFFER, m->data_size, m->data, GL_STATIC_DRAW));
 
   if(m->index_data) {
     GLuint idx_stride;
@@ -88,9 +88,9 @@ void Loader::loadMesh(DrawableMesh* m)
     default: idx_stride = 0; break;
     }
 
-    GL_CHECK(glGenBuffers(1, &idx_buf))
-    GL_CHECK(glBindBuffer(GL_COPY_WRITE_BUFFER, idx_buf))
-    GL_CHECK(glBufferData(GL_COPY_WRITE_BUFFER, m->index_count*idx_stride, m->index_data, GL_STATIC_DRAW))
+    GL_CHECK(glGenBuffers(1, &idx_buf));
+    GL_CHECK(glBindBuffer(GL_COPY_WRITE_BUFFER, idx_buf));
+    GL_CHECK(glBufferData(GL_COPY_WRITE_BUFFER, m->index_count*idx_stride, m->index_data, GL_STATIC_DRAW));
   }
 
   // make sure the data is actually ready before giving it to the main thread
@@ -108,14 +108,14 @@ void Loader::loadMesh(DrawableMesh* m)
 void Loader::mainThreadLoadMesh(DrawableMesh* m)
 {
   GLuint vao;
-  GL_CHECK(glGenVertexArrays(1, &vao))
-  GL_CHECK(glBindVertexArray(vao))
-  GL_CHECK(glBindBuffer(GL_ARRAY_BUFFER, m->buffer->vtxbuffer))
-  GL_CHECK(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m->buffer->idxbuffer))
+  GL_CHECK(glGenVertexArrays(1, &vao));
+  GL_CHECK(glBindVertexArray(vao));
+  GL_CHECK(glBindBuffer(GL_ARRAY_BUFFER, m->buffer->vtxbuffer));
+  GL_CHECK(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m->buffer->idxbuffer));
 
   auto end = m->attributes.end();
   for(auto i = m->attributes.begin(); i != end; ++i) {
-    GLenum type;
+    GLenum type = 0;
     switch(i->type) {
     case DrawableMesh::Byte: type = GL_BYTE;
       break;
@@ -138,10 +138,10 @@ void Loader::mainThreadLoadMesh(DrawableMesh* m)
     }
 
     if(i->special == DrawableMesh::Integer) {
-      GL_CHECK(glVertexAttribIPointer(i->loc, i->size, type, m->data_stride, (GLvoid*)(i->start)))
+      GL_CHECK(glVertexAttribIPointer(i->loc, i->size, type, m->data_stride, (GLvoid*)(i->start)));
     } else {
       GLboolean normalized = (i->special == DrawableMesh::Normalize) ? GL_TRUE : GL_FALSE;
-      GL_CHECK(glVertexAttribPointer(i->loc, i->size, type, normalized, m->data_stride, (GLvoid*)(i->start)))
+      GL_CHECK(glVertexAttribPointer(i->loc, i->size, type, normalized, m->data_stride, (GLvoid*)(i->start)));
     }
   }
 
@@ -185,31 +185,31 @@ ShaderProgram* Loader::loadProgram(std::string vert, std::string frag, std::stri
   prog->vert = s.vert;
   prog->geom = s.geom;
   prog->frag = s.frag;
-  GL_CHECK(glAttachShader(prog->gl_id, prog->vert->gl_id))
+  GL_CHECK(glAttachShader(prog->gl_id, prog->vert->gl_id));
   if (prog->geom) {
-    GL_CHECK(glAttachShader(prog->gl_id, prog->geom->gl_id))
+    GL_CHECK(glAttachShader(prog->gl_id, prog->geom->gl_id));
   }
-  GL_CHECK(glAttachShader(prog->gl_id, prog->frag->gl_id))
+  GL_CHECK(glAttachShader(prog->gl_id, prog->frag->gl_id));
 
-  GL_CHECK(glBindFragDataLocation(prog->gl_id, 0, "fcol"))
-  GL_CHECK(glBindFragDataLocation(prog->gl_id, 1, "fnor"))
-  GL_CHECK(glBindAttribLocation(prog->gl_id, DrawableMesh::Pos, "pos"))
-  GL_CHECK(glBindAttribLocation(prog->gl_id, DrawableMesh::Nor, "nor"))
-  GL_CHECK(glBindAttribLocation(prog->gl_id, DrawableMesh::Tan, "tan"))
-  GL_CHECK(glBindAttribLocation(prog->gl_id, DrawableMesh::Col, "col"))
-  GL_CHECK(glBindAttribLocation(prog->gl_id, DrawableMesh::Te0, "te0"))
-  GL_CHECK(glBindAttribLocation(prog->gl_id, DrawableMesh::Te1, "te1"))
-  GL_CHECK(glBindAttribLocation(prog->gl_id, DrawableMesh::SkinIdx, "ski"))
-  GL_CHECK(glBindAttribLocation(prog->gl_id, DrawableMesh::SkinWeight, "skw"))
+  GL_CHECK(glBindFragDataLocation(prog->gl_id, 0, "fcol"));
+  GL_CHECK(glBindFragDataLocation(prog->gl_id, 1, "fnor"));
+  GL_CHECK(glBindAttribLocation(prog->gl_id, DrawableMesh::Pos, "pos"));
+  GL_CHECK(glBindAttribLocation(prog->gl_id, DrawableMesh::Tan, "tan"));
+  GL_CHECK(glBindAttribLocation(prog->gl_id, DrawableMesh::Col, "col"));
+  GL_CHECK(glBindAttribLocation(prog->gl_id, DrawableMesh::Te0, "te0"));
+  GL_CHECK(glBindAttribLocation(prog->gl_id, DrawableMesh::Te1, "te1"));
+  GL_CHECK(glBindAttribLocation(prog->gl_id, DrawableMesh::SkinIdx, "ski"));
+  GL_CHECK(glBindAttribLocation(prog->gl_id, DrawableMesh::SkinWeight, "skw"));
 
-  GL_CHECK(glLinkProgram(prog->gl_id))
+  GL_CHECK(glLinkProgram(prog->gl_id));
+
   int link_status;
-  GL_CHECK(glGetProgramiv(prog->gl_id, GL_LINK_STATUS, &link_status))
+  GL_CHECK(glGetProgramiv(prog->gl_id, GL_LINK_STATUS, &link_status));
   if(link_status == GL_FALSE) {
     int info_log_length;
-    GL_CHECK(glGetProgramiv(prog->gl_id, GL_INFO_LOG_LENGTH, &info_log_length))
+    GL_CHECK(glGetProgramiv(prog->gl_id, GL_INFO_LOG_LENGTH, &info_log_length));
     char *log = new char[info_log_length];
-    GL_CHECK(glGetProgramInfoLog(prog->gl_id, info_log_length, &info_log_length, log))
+    GL_CHECK(glGetProgramInfoLog(prog->gl_id, info_log_length, &info_log_length, log));
     std::string infolog = log;
     delete[] log;
     throw std::runtime_error("Error linking program: \n" + infolog);

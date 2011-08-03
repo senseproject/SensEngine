@@ -80,9 +80,9 @@ void Pipeline::endFrame()
     GL_CHECK(glBindVertexArray(d.mesh->buffer->vao));
     GL_CHECK(glUseProgram(d.mat->shaders->gl_id));
     if(!d.mesh->index_data) {
-      GL_CHECK(glDrawArrays(GL_TRIANGLES, 0, d.mesh->data_size / d.mesh->data_stride))
+      GL_CHECK(glDrawArrays(GL_TRIANGLES, 0, d.mesh->data_size / d.mesh->data_stride));
     } else {
-      GL_CHECK(glDrawElements(GL_TRIANGLES, d.mesh->index_count, d.mesh->buffer->idx_type, 0))
+      GL_CHECK(glDrawElements(GL_TRIANGLES, d.mesh->index_count, d.mesh->buffer->idx_type, 0));
     }
   }
   self->tasks.clear();
