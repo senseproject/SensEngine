@@ -24,6 +24,7 @@
 
 class Loader;
 struct Material;
+struct DrawableMesh;
 
 // The data manager loads anything that exists inside
 // a game data package. It should be run on a worker thread,
@@ -41,6 +42,8 @@ public:
   Material* loadMaterial(std::string);
   void addMaterial(MaterialDef, std::string);
 
+  DrawableMesh* loadMesh(std::string);
+
 private:
   Loader* m_loader;
   volatile bool m_finished;
@@ -48,6 +51,7 @@ private:
   std::unordered_map<std::string, Material*> m_materials;
   std::unordered_map<std::string, MaterialDef> m_matdefs;
   std::unordered_map<std::string, std::string> m_shaderstrings;
+  std::unordered_map<std::string, DrawableMesh*> m_meshes;
 
   void buildMaterial(std::string);
   std::string loadShaderString(std::string);
@@ -55,6 +59,9 @@ private:
   void pushJob(unsigned int, boost::any);
   typedef std::pair<unsigned int, boost::any> job;
   queue<job> m_jobs;
+  queue<job> m_main_thread_jobs;
+
+  void loadBuiltinData();
 };
 
 

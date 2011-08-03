@@ -15,6 +15,7 @@
 #ifndef SENSE_PIPELINE_DRAWABLE_HPP
 #define SENSE_PIPELINE_DRAWABLE_HPP
 
+struct DrawableBuffer;
 
 struct DrawableMesh {
   enum AttribType {
@@ -57,13 +58,17 @@ struct DrawableMesh {
   };
 
   std::vector<Attribute> attributes;
-  char* data;
+  void* data;
   size_t data_size;
   size_t data_stride;
 
-  char* index_data;
-  size_t index_data_size;
+  void* index_data;
+  size_t index_count;
   AttribType index_type;
+
+  DrawableBuffer* buffer;
+
+  size_t refcnt;
 };
 
 #endif // SENSE_PIPELINE_DRAWABLE_HPP

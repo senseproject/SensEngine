@@ -34,6 +34,9 @@ struct RenderTarget;
 
 struct ClientPlatform;
 
+struct Material;
+struct DrawableMesh;
+
 class SenseClient
 {
 public:
@@ -73,6 +76,10 @@ private:
   Pipeline* m_pipeline;
   Loader* m_loader;
   RenderTarget* framebuffer;
+
+  // Temp draw members
+  DrawableMesh* mesh;
+  Material* mat;
 
   // Information about the client window
   uint32_t m_new_width, m_new_height;

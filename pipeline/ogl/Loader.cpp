@@ -17,12 +17,9 @@
 #include "implementation.hpp"
 #include "../interface.hpp"
 #include "../Drawable.hpp"
-#include "../Builtins.hpp"
 #include "glexcept.hpp"
 // #include "Webview.hpp"
 
-#include <boost/filesystem.hpp>
-#include <boost/filesystem/fstream.hpp>
 #include <sstream>
 
 Texture::~Texture()
@@ -34,18 +31,7 @@ Loader::Loader()
   std::stringstream ss;
   unsigned int num_instances = 64; // TODO: fetch from config system
   ss << "#version 150" << std::endl;
-//  ss << "#extension GL_ARB_explicit_attrib_location : require" << std::endl;
   ss << "#define SENSE_MAX_INSTANCES " << num_instances << std::endl;
-/*  ss << "#define SENSE_VERT_INPUT_POS " << DrawableMesh::Pos << std::endl;
-  ss << "#define SENSE_VERT_INPUT_NOR " << DrawableMesh::Nor << std::endl;
-  ss << "#define SENSE_VERT_INPUT_TAN " << DrawableMesh::Tan << std::endl;
-  ss << "#define SENSE_VERT_INPUT_COL " << DrawableMesh::Col << std::endl;
-  ss << "#define SENSE_VERT_INPUT_TE0 " << DrawableMesh::Te0 << std::endl;
-  ss << "#define SENSE_VERT_INPUT_TE1 " << DrawableMesh::Te1 << std::endl;
-  ss << "#define SENSE_VERT_INPUT_SKINIDX " << DrawableMesh::SkinIdx << std::endl;
-  ss << "#define SENSE_VERT_INPUT_SKINWEIGHT " << DrawableMesh::SkinWeight << std::endl;
-  ss << "#define SENSE_FRAG_OUTPUT_COL 0" << std::endl;
-  ss << "#define SENSE_FRAG_OUTPUT_NOR 1" << std::endl; */
   ss << std::endl;
   self->shader_header = ss.str();
 }
@@ -84,6 +70,82 @@ GlShader* LoaderImpl::loadShader(std::string shader_source, GLenum gl_shader_typ
   }
   
   return shader;
+}
+
+void Loader::loadMesh(DrawableMesh* m)
+{
+  GLuint vtx_buf, idx_buf=0;
+  GLenum idx_type;
+  GL_CHECK(glGenBuffers(1, &vtx_buf))
+  GL_CHECK(glBindBuffer(GL_COPY_WRITE_BUFFER, vtx_buf))
+  GL_CHECK(glBufferData(GL_COPY_WRITE_BUFFER, m->data_size, m->data, GL_STATIC_DRAW))
+
+  if(m->index_data) {
+    GLuint idx_stride;
+    switch(m->index_type) {
+    case DrawableMesh::UByte: idx_stride = 1; idx_type = GL_UNSIGNED_BYTE; break;
+    case DrawableMesh::UShort: idx_stride = 2; idx_type = GL_UNSIGNED_SHORT; break;
+    default: idx_stride = 0; break;
+    }
+
+    GL_CHECK(glGenBuffers(1, &idx_buf))
+    GL_CHECK(glBindBuffer(GL_COPY_WRITE_BUFFER, idx_buf))
+    GL_CHECK(glBufferData(GL_COPY_WRITE_BUFFER, m->index_count*idx_stride, m->index_data, GL_STATIC_DRAW))
+  }
+
+  // make sure the data is actually ready before giving it to the main thread
+  GL_CHECK(glFinish());
+
+  DrawableBuffer* b = new DrawableBuffer;
+  b->vao = 0;
+  b->vtxbuffer = vtx_buf;
+  b->idxbuffer = idx_buf;
+  b->idx_type = idx_type;
+
+  m->buffer = b;
+}
+
+void Loader::mainThreadLoadMesh(DrawableMesh* m)
+{
+  GLuint vao;
+  GL_CHECK(glGenVertexArrays(1, &vao))
+  GL_CHECK(glBindVertexArray(vao))
+  GL_CHECK(glBindBuffer(GL_ARRAY_BUFFER, m->buffer->vtxbuffer))
+  GL_CHECK(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m->buffer->idxbuffer))
+
+  auto end = m->attributes.end();
+  for(auto i = m->attributes.begin(); i != end; ++i) {
+    GLenum type;
+    switch(i->type) {
+    case DrawableMesh::Byte: type = GL_BYTE;
+      break;
+    case DrawableMesh::UByte: type = GL_UNSIGNED_BYTE;
+      break;
+    case DrawableMesh::Short: type = GL_SHORT;
+      break;
+    case DrawableMesh::UShort: type = GL_UNSIGNED_SHORT;
+      break;
+    case DrawableMesh::Int: type = GL_INT;
+      break;
+    case DrawableMesh::UInt: type = GL_UNSIGNED_INT;
+      break;
+    case DrawableMesh::Float: type = GL_FLOAT;
+      break;
+    case DrawableMesh::Half: type = GL_HALF_FLOAT;
+      break;
+    case DrawableMesh::Double: type = GL_DOUBLE;
+      break;
+    }
+
+    if(i->special == DrawableMesh::Integer) {
+      GL_CHECK(glVertexAttribIPointer(i->loc, i->size, type, m->data_stride, (GLvoid*)(i->start)))
+    } else {
+      GLboolean normalized = (i->special == DrawableMesh::Normalize) ? GL_TRUE : GL_FALSE;
+      GL_CHECK(glVertexAttribPointer(i->loc, i->size, type, normalized, m->data_stride, (GLvoid*)(i->start)))
+    }
+  }
+
+  m->buffer->vao = vao;
 }
 
 boost::any Loader::queryUniform(ShaderProgram* prog, std::string name)

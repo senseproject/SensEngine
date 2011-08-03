@@ -51,6 +51,7 @@ CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/client/Client_config.in.cpp ${CMAKE_C
 ADD_SUBDIRECTORY(pipeline/${PIPELINE})
 
 SET(SENSE_client_srcs
+  client/Builtins.cpp
   client/Client.cpp
   client/Client_${PLATFORM}_${PIPELINE}.cpp
   ${CMAKE_CURRENT_BINARY_DIR}/client/Client_config.cpp
@@ -58,6 +59,7 @@ SET(SENSE_client_srcs
 )
 
 SET(SENSE_client_hdrs
+  client/Builtins.hpp
   client/Client.hpp
   client/DataManager.hpp
 )
@@ -71,13 +73,11 @@ SET(SENSE_client_python_hdrs
 )
 
 SET(SENSE_pipeline_srcs
-  pipeline/Builtins.cpp
 )
 
 SET(SENSE_pipeline_hdrs
   pipeline/interface.hpp
   pipeline/Drawable.hpp
-  pipeline/Builtins.hpp
   pipeline/Material.hpp
 )
 

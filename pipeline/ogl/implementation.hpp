@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef SENSE_PIPELINE_OGL_PIPELINE_P_HPP
-#define SENSE_PIPELINE_OGL_PIPELINE_P_HPP
+#ifndef SENSE_PIPELINE_OGL_IMPLEMENTATION_HPP
+#define SENSE_PIPELINE_OGL_IMPLEMENTATION_HPP
 
 #include "GL/glew.h"
 #include "../DefinitionTypes.hpp"
@@ -22,9 +22,13 @@
 #include <set>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 class SenseClient;
+
+struct DrawableMesh;
+struct Material;
 
 struct GlShader
 {
@@ -97,6 +101,20 @@ struct RenderTarget
   uint32_t width, height;
 };
 
+struct DrawableBuffer
+{
+  GLuint vtxbuffer;
+  GLuint idxbuffer;
+  GLuint vao;
+  GLenum idx_type;
+};
+
+struct DrawTask
+{
+  DrawableMesh* mesh;
+  Material* mat;
+};
+
 struct PipelineImpl 
 {
   RenderTarget* current_framebuffer;
@@ -105,6 +123,8 @@ struct PipelineImpl
   std::set<uint32_t> fsaa_levels;
 
   GLuint width, height;
+
+  std::vector<DrawTask> tasks;
 };
 
 struct LoaderImpl
@@ -113,8 +133,9 @@ struct LoaderImpl
   std::unordered_map<ShaderSet, ShaderProgram*> programs;
   std::unordered_map<std::string, GlShader*> shaders;
   std::unordered_map<std::string, Texture*> textures;
+  std::unordered_set<DrawableMesh*> meshes;
 
   GlShader* loadShader(std::string, GLenum);
 };
 
-#endif // SENSE_PIPELINE_OGL_PIPELINE_P_HPP
+#endif // SENSE_PIPELINE_OGL_IMPLEMENTATION_HPP

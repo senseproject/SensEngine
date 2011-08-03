@@ -57,6 +57,9 @@ SenseClient::SenseClient()
 
   readScriptsDir("../data/materials", ".smtl");
   readScriptsDir("../data/definitions", ".sdef");
+
+  mesh = m_datamgr->loadMesh("__quad__");
+  mat = m_datamgr->loadMaterial("simple");
 };
 
 SenseClient::~SenseClient()
@@ -83,6 +86,7 @@ bool SenseClient::tick()
   }
 
   m_datamgr->mainThreadTick();
+  m_pipeline->addDrawTask(mesh, mat, glm::mat4(1.f));
   m_pipeline->setRenderTarget(framebuffer);
   m_pipeline->render();
   m_pipeline->endFrame();

@@ -8,13 +8,17 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
 #include "implementation.hpp"
 #include "../interface.hpp"
 #include "glexcept.hpp"
+#include "../Material.hpp"
+#include "../Drawable.hpp"
+
+#include <boost/foreach.hpp>
 
 Pipeline::Pipeline()
   : self(new PipelineImpl)
@@ -41,6 +45,15 @@ Pipeline::Pipeline()
 Pipeline::~Pipeline()
 {}
 
+void Pipeline::addDrawTask(DrawableMesh* mesh, Material* mat, glm::mat4 mv, bool instance)
+{
+  DrawTask d;
+  d.mesh = mesh;
+  d.mat = mat;
+  self->tasks.push_back(d);
+}
+
+
 void Pipeline::render()
 {
   if(!self->current_framebuffer)
@@ -58,6 +71,21 @@ void Pipeline::endFrame()
 {
   GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, self->current_framebuffer->lbuffer_id));
   // TODO: draw panels
+  BOOST_FOREACH(DrawTask d, self->tasks) {
+    if(!d.mesh->buffer || !d.mesh->buffer->vao)
+      continue;
+    if(!d.mat->shaders || !d.mat->shaders->gl_id)
+      continue;
+    
+    GL_CHECK(glBindVertexArray(d.mesh->buffer->vao));
+    GL_CHECK(glUseProgram(d.mat->shaders->gl_id));
+    if(!d.mesh->index_data) {
+      GL_CHECK(glDrawArrays(GL_TRIANGLES, 0, d.mesh->data_size / d.mesh->data_stride))
+    } else {
+      GL_CHECK(glDrawElements(GL_TRIANGLES, d.mesh->index_count, d.mesh->buffer->idx_type, 0))
+    }
+  }
+  self->tasks.clear();
   GL_CHECK(glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0));
   GL_CHECK(glBlitFramebuffer(0, 0, self->current_framebuffer->width, self->current_framebuffer->height, 0, 0, self->width, self->height, GL_COLOR_BUFFER_BIT, GL_NEAREST));
 }

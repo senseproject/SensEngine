@@ -20,10 +20,10 @@ Loader::Loader()
 Loader::~Loader()
 {}
 
-DrawBuffer* Loader::loadMesh(DrawableMesh*)
-{ return 0; }
+void Loader::loadMesh(DrawableMesh*)
+{}
 
-void Loader::releaseMesh(DrawBuffer*)
+void Loader::releaseMesh(DrawableMesh*)
 {}
 
 Pipeline::Pipeline()
@@ -32,7 +32,7 @@ Pipeline::Pipeline()
 Pipeline::~Pipeline()
 {}
 
-void Pipeline::addDrawTask(DrawBuffer*, Material*, glm::mat4, bool)
+void Pipeline::addDrawTask(DrawableMesh*, Material*, glm::mat4, bool)
 {}
 
 void Pipeline::addLamp(Lamp*)

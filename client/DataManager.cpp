@@ -13,6 +13,8 @@
 // limitations under the License.
 
 #include "DataManager.hpp"
+#include "Builtins.hpp"
+#include "pipeline/Drawable.hpp"
 #include "pipeline/Material.hpp"
 #include "pipeline/interface.hpp"
 
@@ -22,12 +24,15 @@
 #include <boost/filesystem/fstream.hpp>
 
 enum {
-  BUILD_MATERIAL
+  BUILD_MATERIAL,
+  FINISH_MESH_LOAD,
 };
 
 DataManager::DataManager(Loader* loader)
   : m_loader(loader)
-{}
+{
+  loadBuiltinData();
+}
 
 DataManager::~DataManager()
 {}
@@ -42,8 +47,8 @@ void DataManager::exec()
     while(m_jobs.try_pop(j)) {
       switch(j.first) {
       case BUILD_MATERIAL:
-	buildMaterial(any_cast<std::string>(j.second));
-	break;
+        buildMaterial(any_cast<std::string>(j.second));
+        break;
       }
     }
     boost::this_thread::yield();
@@ -56,7 +61,18 @@ void DataManager::finish()
 }
 
 void DataManager::mainThreadTick()
-{}
+{
+  using boost::any_cast;
+
+  job j;
+  while(m_main_thread_jobs.try_pop(j)) {
+    switch(j.first) {
+    case FINISH_MESH_LOAD: 
+      m_loader->mainThreadLoadMesh(any_cast<DrawableMesh*>(j.second));
+      break;
+    }
+  }
+}
 
 Material* DataManager::loadMaterial(std::string name)
 {
@@ -84,6 +100,16 @@ void DataManager::addMaterial(MaterialDef def, std::string name)
       m_jobs.push(job(BUILD_MATERIAL, name));
     }
   }
+}
+
+DrawableMesh* DataManager::loadMesh(std::string name)
+{
+  auto i = m_meshes.find(name);
+  if(i != m_meshes.end()) {
+    i->second->refcnt++;
+    return i->second;
+  }
+  return NULL;
 }
 
 void DataManager::buildMaterial(std::string name)
@@ -137,4 +163,57 @@ std::string DataManager::loadShaderString(std::string name)
   std::string shader =  std::string(std::istreambuf_iterator<char>(stream), std::istreambuf_iterator<char>());
   m_shaderstrings.insert(std::make_pair(name, shader));
   return shader;
+}
+
+void DataManager::loadBuiltinData()
+{
+  DrawableMesh* builtin;
+  DrawableMesh::Attribute a;
+
+  a.type = DrawableMesh::Float;
+  a.special = DrawableMesh::None;
+
+  builtin = new DrawableMesh;
+  builtin->refcnt = 1; // builtin data is *never* erased
+  builtin->data = builtin_quad_data;
+  builtin->data_size = 120;
+  builtin->data_stride = 20;
+  builtin->index_data = 0;
+
+  a.loc = DrawableMesh::Pos;
+  a.start = 0;
+  a.size = 3;
+  builtin->attributes.push_back(a);
+
+  a.loc = DrawableMesh::Te0;
+  a.start = 12;
+  a.size = 2;
+  builtin->attributes.push_back(a);
+
+  m_meshes.insert(std::make_pair("__quad__", builtin));
+  m_loader->loadMesh(builtin);
+  m_main_thread_jobs.push(job(FINISH_MESH_LOAD, builtin));
+
+  builtin = new DrawableMesh;
+  builtin->refcnt = 1; // builtin data is *never* erased
+  builtin->data = builtin_missing_data;
+  builtin->data_size = 480;
+  builtin->data_stride = 20;
+  builtin->index_data = builtin_missing_indices;
+  builtin->index_count = 36;
+  builtin->index_type = DrawableMesh::UShort;
+
+  a.loc = DrawableMesh::Pos;
+  a.start = 0;
+  a.size = 3;
+  builtin->attributes.push_back(a);
+
+  a.loc = DrawableMesh::Te0;
+  a.start = 12;
+  a.size = 2;
+  builtin->attributes.push_back(a);
+
+  m_meshes.insert(std::make_pair("__missing__", builtin));
+  m_loader->loadMesh(builtin);
+  m_main_thread_jobs.push(job(FINISH_MESH_LOAD, builtin));
 }
