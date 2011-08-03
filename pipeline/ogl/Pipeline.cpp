@@ -148,6 +148,7 @@ void Pipeline::destroyRenderTarget(RenderTarget* rt)
   fboids[1] = rt->gbuffer_id;
   GL_CHECK(glDeleteTextures(4, texids));
   GL_CHECK(glDeleteFramebuffers(2, fboids));
+  delete rt;
 }
 
 void Pipeline::setRenderTarget(RenderTarget* rt)
