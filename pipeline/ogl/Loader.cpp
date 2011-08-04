@@ -137,6 +137,7 @@ void Loader::mainThreadLoadMesh(DrawableMesh* m)
       break;
     }
 
+    GL_CHECK(glEnableVertexAttribArray(i->loc));
     if(i->special == DrawableMesh::Integer) {
       GL_CHECK(glVertexAttribIPointer(i->loc, i->size, type, m->data_stride, (GLvoid*)(i->start)));
     } else {
