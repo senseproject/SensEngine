@@ -51,25 +51,13 @@ CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/client/Client_config.in.cpp ${CMAKE_C
 ADD_SUBDIRECTORY(pipeline/${PIPELINE})
 
 SET(SENSE_client_srcs
-  client/Builtins.cpp
   client/Client.cpp
   client/Client_${PLATFORM}_${PIPELINE}.cpp
   ${CMAKE_CURRENT_BINARY_DIR}/client/Client_config.cpp
-  client/DataManager.cpp
 )
 
 SET(SENSE_client_hdrs
-  client/Builtins.hpp
   client/Client.hpp
-  client/DataManager.hpp
-)
-
-SET(SENSE_client_python_srcs
-  client/python/DataManager.cpp
-)
-
-SET(SENSE_client_python_hdrs
-  client/python/PyDataManager.hpp
 )
 
 SET(SENSE_pipeline_srcs
@@ -105,6 +93,14 @@ SET(SENSE_python_entity_hdrs
   python/entity/PyEntity.hpp
 )
 
+SET(SENSE_python_world_srcs
+  python/world/DataManager.cpp
+)
+
+SET(SENSE_python_world_hdrs
+  python/world/PyDataManager.hpp
+)
+
 SET(SENSE_python_hdrs
   python/module.hpp
   python/pywarnings.hpp
@@ -138,13 +134,25 @@ SET(SENSE_link_libraries
   ${BERKELIUM_LIBRARIES}
 )
 
+SET(SENSE_world_srcs
+  world/Builtins.cpp
+  world/DataManager.cpp
+)
+
+SET(SENSE_world_hdrs
+  world/Builtins.hpp
+  world/DataManager.hpp
+)
+
 ADD_LIBRARY(SenseCore
             ${SENSE_platform_srcs}
             ${SENSE_entity_srcs} ${SENSE_entity_hdrs}
             ${SENSE_pipeline_srcs} ${SENSE_pipeline_hdrs}
+            ${SENSE_world_srcs} ${SENSE_world_hdrs}
             ${SENSE_python_srcs} ${SENSE_python_hdrs}
             ${SENSE_python_entity_srcs} ${SENSE_python_entity_hdrs}
             ${SENSE_python_pipeline_srcs} ${SENSE_python_pipeline_hdrs}
+            ${SENSE_python_world_srcs} ${SENSE_python_world_hdrs}
             ${SENSE_util_hdrs}
 )
 ADD_LIBRARY(SenseDummyPipe
@@ -172,7 +180,7 @@ SOURCE_GROUP("pipeline" FILES ${SENSE_pipeline_srcs} ${SENSE_pipeline_hdrs})
 SOURCE_GROUP("python" FILES ${SENSE_python_srcs} ${SENSE_python_hdrs})
 SOURCE_GROUP("python\\pipeline" FILES ${SENSE_python_pipeline_srcs} ${SENSE_python_pipeline_hdrs})
 SOURCE_GROUP("python\\entity" FILES ${SENSE_python_entity_srcs} ${SENSE_python_entity_hdrs})
+SOURCE_GROUP("python\\world" FILES ${SENSE_python_world_srcs} ${SENSE_python_world_hdrs})
 SOURCE_GROUP("util" FILES ${SENSE_util_hdrs})
 SOURCE_GROUP("entity" FILES ${SENSE_entity_srcs} ${SENSE_entity_hdrs})
-
-SOURCE_GROUP("python" FILES ${SENSE_client_python_srcs} ${SENSE_client_python_hdrs})
+SOURCE_GROUP("world" FILES ${SENSE_world_srcs} ${SENSE_world_hdrs})

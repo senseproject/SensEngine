@@ -17,7 +17,7 @@
 #include "entity/Entity.hpp"
 
 #include "PyEntity.hpp"
-#include "client/python/PyDataManager.hpp"
+#include "python/world/PyDataManager.hpp"
 
 static PyObject* PyEntity_new(PyTypeObject* type, PyObject* args, PyObject*)
 {

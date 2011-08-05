@@ -15,7 +15,7 @@
 #include "DrawableComponent.hpp"
 #include "Entity.hpp"
 
-#include "client/DataManager.hpp"
+#include "world/DataManager.hpp"
 #include "pipeline/interface.hpp"
 
 DrawableComponent::DrawableComponent(Entity* owner)
