@@ -23,7 +23,39 @@ Loader::~Loader()
 void Loader::loadMesh(DrawableMesh*)
 {}
 
+void Loader::mainThreadLoadMesh(DrawableMesh*)
+{}
+
 void Loader::releaseMesh(DrawableMesh*)
+{}
+
+boost::any Loader::queryUniform(ShaderProgram*, std::string)
+{
+  return -1;
+}
+
+ShaderProgram* Loader::loadProgram(std::string, std::string, std::string)
+{
+  return 0;
+}
+
+Texture* Loader::loadTexture(Image*)
+{
+  return 0;
+}
+
+void Loader::updateTexture(Texture*)
+{}
+
+void Loader::releaseTexture(Texture*)
+{}
+
+bool Loader::isThreaded()
+{
+  return false;
+}
+
+void Loader::releaseProgram(ShaderProgram*)
 {}
 
 Pipeline::Pipeline()
