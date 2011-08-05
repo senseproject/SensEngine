@@ -27,6 +27,8 @@ class CoordinateComponent;
 class DrawableComponent;
 class PhysicalComponent;
 
+class DataManager;
+
 struct Entity
 {
   std::string m_type;
@@ -39,6 +41,9 @@ struct Entity
   CoordinateComponent* m_coord;
   DrawableComponent* m_draw;
   PhysicalComponent* m_phys;
+
+  // The high-level components needed by this Entity
+  DataManager* m_datamgr;
 };
 
 // an EntityFactory subclass creates a specific entity by
@@ -70,7 +75,7 @@ public:
   Entity* createEntity(std::string, boost::uuids::uuid* uuid=NULL);
   void destroyEntity(boost::uuids::uuid);
   Entity* findEntity(boost::uuids::uuid);
-  
+
   void addFactory(std::string, EntityFactory*);
 private:
   std::unordered_map<boost::uuids::uuid, Entity*, boost::hash<boost::uuids::uuid> > m_entities;

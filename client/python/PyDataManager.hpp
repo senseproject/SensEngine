@@ -17,5 +17,6 @@ struct PyDataManager {
   DataManager* loader;
 };
 
+extern PyTypeObject PyDataManager_Type;
 extern void initDataManager(PyObject* m);
 extern PyObject* PyDataManager_create(DataManager*);

@@ -12,25 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef SENSE_ENTITY_COMPONENT_HPP
-#define SENSE_ENTITY_COMPONENT_HPP
+#ifndef SENSE_ENTITY_DRAWABLECOMPONENT_HPP
+#define SENSE_ENTITY_DRAWABLECOMPONENT_HPP
 
-struct Entity;
-struct Message;
+#include "Component.hpp"
 
-class Component
+struct DrawableMesh;
+struct Material;
+
+class Pipeline;
+
+class DrawableComponent : public Component
 {
 public:
-  Component(Entity* owner);
-  
-  virtual ~Component();
+  DrawableComponent(Entity*);
+  virtual ~DrawableComponent();
 
-  virtual void receiveMessage(const Message&) = 0;
+  virtual void receiveMessage(const Message&);
 
-protected:
-  virtual void sendMessage(const Message&);
+  void draw(Pipeline*);
 
-  Entity* m_owner;
+private:
+  DrawableMesh *m_mesh;
+  Material* m_mat;
 };
 
-#endif // SENSE_ENTITY_COMPONENT_HPP
+#endif // SENSE_ENTITY_DRAWABLECOMPONENT_HPP

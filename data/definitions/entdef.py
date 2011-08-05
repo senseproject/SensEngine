@@ -25,3 +25,10 @@ def register_factory(name, factory):
         pass
     # registration functions for other situations besides the default client go here
     raise NotImplementedError("Don't understand this context; can't register factories")
+
+def register_get_datamgr():
+    try:
+        return SensEngine.client.loader
+    except AttributeError:
+        pass
+    raise NotImplementedError("Don't understand this context; can't fetch datamgr")

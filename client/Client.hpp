@@ -37,6 +37,8 @@ struct ClientPlatform;
 struct Material;
 struct DrawableMesh;
 
+struct Entity;
+
 class SenseClient
 {
 public:
@@ -77,9 +79,8 @@ private:
   Loader* m_loader;
   RenderTarget* framebuffer;
 
-  // Temp draw members
-  DrawableMesh* mesh;
-  Material* mat;
+  // Temp entity for draw test (until we have a World)
+  Entity* m_test_ent;
 
   // Information about the client window
   uint32_t m_new_width, m_new_height;

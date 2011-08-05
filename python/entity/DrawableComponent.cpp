@@ -14,17 +14,17 @@
 
 #include "python/module.hpp"
 #include "python/pywarnings.hpp"
-#include "entity/CoordinateComponent.hpp"
+#include "entity/DrawableComponent.hpp"
 
 #include "PyEntity.hpp"
 
-struct PyCoordinateComponent
+struct PyDrawableComponent
 {
   PyObject_HEAD;
-  CoordinateComponent* coord;
+  DrawableComponent* coord;
 };
 
-static PyObject* PyCoordinateComponent_new(PyTypeObject* type, PyObject* args, PyObject*)
+static PyObject* PyDrawableComponent_new(PyTypeObject* type, PyObject* args, PyObject*)
 {
   PyObject* owner;
   if(!PyArg_ParseTuple(args, "O", &owner))
@@ -35,34 +35,34 @@ static PyObject* PyCoordinateComponent_new(PyTypeObject* type, PyObject* args, P
     return NULL;
   }
   
-  PyCoordinateComponent* c = (PyCoordinateComponent*)type->tp_alloc(type, 0);
-  c->coord = new CoordinateComponent(((PyEntity*)owner)->ent);
+  PyDrawableComponent* c = (PyDrawableComponent*)type->tp_alloc(type, 0);
+  c->coord = new DrawableComponent(((PyEntity*)owner)->ent);
   return (PyObject*)c;
 }
 
 extern PyTypeObject PyComponent_Type;
 
-PyTypeObject PyCoordinateComponent_Type = {
+PyTypeObject PyDrawableComponent_Type = {
   PyObject_HEAD_INIT(0)
-  "SensEngine.Components.Coordinate",
-  sizeof(PyCoordinateComponent),
+  "SensEngine.Components.Drawable",
+  sizeof(PyDrawableComponent),
   0,
   0,
   0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 0,
   Py_TPFLAGS_DEFAULT,
-  "Component that defines world transform parameters for this object",
+  "Component that defines pipeline parameters for this object",
   0, 0, 0, 0, 0, 0,
   0, 0, 0,
   &PyComponent_Type,
   0, 0, 0, 0, 0, 0,
-  PyCoordinateComponent_new
+  PyDrawableComponent_new
 };
 
-void initCoordinateComponent(PyObject* m)
+void initDrawableComponent(PyObject* m)
 {
-  if(PyType_Ready(&PyCoordinateComponent_Type) < 0)
+  if(PyType_Ready(&PyDrawableComponent_Type) < 0)
     return;
-  Py_INCREF(&PyCoordinateComponent_Type);
-  PyModule_AddObject(m, "Coordinate", (PyObject*)&PyCoordinateComponent_Type);
+  Py_INCREF(&PyDrawableComponent_Type);
+  PyModule_AddObject(m, "Drawable", (PyObject*)&PyDrawableComponent_Type);
 }

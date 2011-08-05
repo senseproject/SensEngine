@@ -2,9 +2,9 @@ from entdef import *
 
 class DummyFactory(EntityFactory):
     def create(self):
-       e = Entity()
+       e = Entity(register_get_datamgr())
        Components.Coordinate(e)
-       # Components.Drawable(e)
+       Components.Drawable(e)
        return e
 
 register_factory("dummy", DummyFactory)

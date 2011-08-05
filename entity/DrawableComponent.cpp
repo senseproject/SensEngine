@@ -12,25 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef SENSE_ENTITY_COMPONENT_HPP
-#define SENSE_ENTITY_COMPONENT_HPP
+#include "DrawableComponent.hpp"
+#include "Entity.hpp"
 
-struct Entity;
-struct Message;
+#include "client/DataManager.hpp"
+#include "pipeline/interface.hpp"
 
-class Component
+DrawableComponent::DrawableComponent(Entity* owner)
+  : Component(owner)
 {
-public:
-  Component(Entity* owner);
-  
-  virtual ~Component();
+  m_owner->m_draw = this;
 
-  virtual void receiveMessage(const Message&) = 0;
+  m_mesh = m_owner->m_datamgr->loadMesh("__quad__");
+  m_mat = m_owner->m_datamgr->loadMaterial("simple");
+}
 
-protected:
-  virtual void sendMessage(const Message&);
+DrawableComponent::~DrawableComponent()
+{
+  m_owner->m_draw = 0;
+}
 
-  Entity* m_owner;
-};
+void DrawableComponent::receiveMessage(const Message& msg)
+{}
 
-#endif // SENSE_ENTITY_COMPONENT_HPP
+void DrawableComponent::draw(Pipeline* pipe)
+{
+  pipe->addDrawTask(m_mesh, m_mat, glm::mat4(1.f));
+}

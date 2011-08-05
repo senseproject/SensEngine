@@ -17,11 +17,22 @@
 #include "entity/Entity.hpp"
 
 #include "PyEntity.hpp"
+#include "client/python/PyDataManager.hpp"
 
-static PyObject* PyEntity_new(PyTypeObject* type, PyObject*, PyObject*)
+static PyObject* PyEntity_new(PyTypeObject* type, PyObject* args, PyObject*)
 {
+  PyObject* mgr;
+  if(!PyArg_ParseTuple(args, "O", &mgr))
+    return NULL;
+
+  if(!PyObject_IsInstance(mgr, (PyObject*)&PyDataManager_Type)) {
+    PyErr_SetString(PyExc_TypeError, "Must pass a DataManager as the owner");
+    return NULL;
+  }
+
   PyEntity* entity = (PyEntity*)type->tp_alloc(type, 0);
   entity->ent = new Entity;
+  entity->ent->m_datamgr = (((PyDataManager*)mgr)->loader);
   return (PyObject*)entity;
 }
 

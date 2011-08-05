@@ -96,6 +96,7 @@ SET(SENSE_python_pipeline_hdrs
 SET(SENSE_python_entity_srcs
   python/entity/Component.cpp
   python/entity/CoordinateComponent.cpp
+  python/entity/DrawableComponent.cpp
   python/entity/Entity.cpp
   python/entity/EntityFactory.cpp
 )
@@ -117,12 +118,14 @@ SET(SENSE_util_hdrs
 
 set(SENSE_entity_srcs
   entity/CoordinateComponent.cpp
+  entity/DrawableComponent.cpp
   entity/Entity.cpp
 )
 
 set(SENSE_entity_hdrs
   entity/Component.hpp
   entity/CoordinateComponent.hpp
+  entity/DrawableComponent.hpp
   entity/Entity.hpp
 )
 

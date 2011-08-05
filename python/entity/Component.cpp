@@ -44,6 +44,7 @@ PyTypeObject PyComponent_Type = {
 };
 
 extern void initCoordinateComponent(PyObject*);
+extern void initDrawableComponent(PyObject*);
 
 void initComponentClasses(PyObject* m)
 {
@@ -55,4 +56,5 @@ void initComponentClasses(PyObject* m)
   PyModule_AddObject(compmod, "Component", (PyObject*)&PyComponent_Type);
   PyModule_AddObject(m, "Components", compmod);
   initCoordinateComponent(compmod);
+  initDrawableComponent(compmod);
 }
