@@ -17,13 +17,11 @@
 #include "implementation.hpp"
 #include "../interface.hpp"
 #include "../Drawable.hpp"
+#include "../Image.hpp"
 #include "glexcept.hpp"
 // #include "Webview.hpp"
 
 #include <sstream>
-
-Texture::~Texture()
-{}
 
 Loader::Loader()
   : self(new LoaderImpl)
@@ -224,6 +222,23 @@ void Loader::releaseProgram(ShaderProgram* program)
   if(program)
     program->refcnt--;
   // No actual resource freeing is done yet. Garbage collection is handled when needed.
+}
+
+void Loader::loadTexture(Image* img) {
+  GLenum internal_format, format;
+  GLuint texid;
+  switch(img->format) {
+  case Image::R8: internal_format=GL_R8; format=GL_R; break;
+  case Image::RG8: internal_format=GL_RG8; format=GL_RG; break;
+  case Image::RGB8: internal_format=GL_RGB8; format=GL_RGB; break;
+  case Image::RGBA8: internal_format=GL_RGBA8; format=GL_RGBA; break;
+  }
+
+  GL_CHECK(glGenTextures(1, &texid));
+  GL_CHECK(glBindTexture(GL_TEXTURE_2D, texid));
+  GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, internal_format, img->width, img->height, 0, format, GL_UNSIGNED_BYTE, img->data));
+  img->tex = new Texture;
+  img->tex->id = texid;
 }
 
 bool Loader::isThreaded() {

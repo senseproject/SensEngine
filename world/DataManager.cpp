@@ -15,6 +15,7 @@
 #include "DataManager.hpp"
 #include "Builtins.hpp"
 #include "pipeline/Drawable.hpp"
+#include "pipeline/Image.hpp"
 #include "pipeline/Material.hpp"
 #include "pipeline/interface.hpp"
 
@@ -23,8 +24,12 @@
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
 
+#include <png.h>
+
 enum {
   BUILD_MATERIAL,
+  LOAD_TEXTURE,
+
   FINISH_MESH_LOAD,
 };
 
@@ -48,6 +53,9 @@ void DataManager::exec()
       switch(j.first) {
       case BUILD_MATERIAL:
         buildMaterial(any_cast<std::string>(j.second));
+        break;
+      case LOAD_TEXTURE:
+        loadTexture(any_cast<std::string>(j.second));
         break;
       }
     }
@@ -125,7 +133,24 @@ void DataManager::buildMaterial(std::string name)
   for(auto i = def.uniforms.begin(); i!= def.uniforms.end(); ++i) {
     Uniform u;
     u.type = i->second.type;
-    u.value = i->second.value; // incorrect for texture uniforms, but works for all the simple types. FIXME
+    if(u.type == UniformDef::Texture) {
+      std::string name = boost::any_cast<std::string>(i->second.value);
+      auto j = m_images.find(name);
+      if(j == m_images.end()) {
+        Image* img = new Image;
+        img->data = 0;
+        img->tex = 0;
+        m_imglock.lock();
+        m_images.insert(std::make_pair(name, img));
+        m_imglock.unlock();
+        u.value = img;
+        m_jobs.push(job(LOAD_TEXTURE, name));
+      } else {
+        u.value = i->second;
+      }
+    } else {
+      u.value = i->second.value;
+    }
     u.pipe_id = m_loader->queryUniform(s, i->first);
     uniforms.push_back(u);
   }
@@ -163,6 +188,100 @@ std::string DataManager::loadShaderString(std::string name)
   std::string shader =  std::string(std::istreambuf_iterator<char>(stream), std::istreambuf_iterator<char>());
   m_shaderstrings.insert(std::make_pair(name, shader));
   return shader;
+}
+
+namespace {
+  void readPngData(png_structp pngPtr, png_bytep data, png_size_t length) {
+    png_voidp a = png_get_io_ptr(pngPtr);
+    ((std::istream*)a)->read((char*)data, length);
+  }
+}
+
+void DataManager::loadTexture(std::string name)
+{
+  boost::filesystem::path img_path("../data/textures");
+  img_path = img_path / (name+".png");
+  if(!exists(img_path))
+    throw std::runtime_error("Can't find texture file " + img_path.string());
+  boost::filesystem::ifstream stream;
+  stream.open(img_path, std::ios_base::binary);
+
+  char pngsig[8];
+  stream.read(pngsig, 8);
+  int is_png = png_sig_cmp((png_const_bytep)pngsig, 0, 8);
+  if(is_png != 0)
+    throw std::runtime_error(img_path.string() + " is not a PNG file");
+  png_structp pngPtr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+  if(!pngPtr)
+    throw std::runtime_error("Error initializing PNG reader");
+  png_infop infoPtr = png_create_info_struct(pngPtr);
+  if(!infoPtr) {
+    png_destroy_read_struct(&pngPtr, 0, 0);
+    throw std::runtime_error("Error initializing PNG reader");
+  }
+  stream.seekg(0);
+  png_set_read_fn(pngPtr, (png_voidp)(&stream), readPngData);
+  png_set_sig_bytes(pngPtr, 0);
+  png_read_info(pngPtr, infoPtr);
+
+  m_imglock.lock();
+  auto iter = m_images.find(name);
+  if(iter == m_images.end())
+    throw std::runtime_error("Tried to load image that hasn't been created: " + name);
+  Image* img = iter->second;
+  m_imglock.unlock();
+  img->width = png_get_image_width(pngPtr, infoPtr);
+  img->height = png_get_image_height(pngPtr, infoPtr);
+
+  png_uint_32 bitdepth = png_get_bit_depth(pngPtr, infoPtr);
+  png_uint_32 channels = png_get_channels(pngPtr, infoPtr);
+  png_uint_32 color_type = png_get_color_type(pngPtr, infoPtr);
+
+  png_set_expand(pngPtr);
+
+  switch(color_type) {
+  case PNG_COLOR_TYPE_PALETTE:
+    channels = 3;
+    break;
+  case PNG_COLOR_TYPE_GRAY:
+    bitdepth = 8;
+    break;
+  }
+
+  if(png_get_valid(pngPtr, infoPtr, PNG_INFO_tRNS)) {
+    channels++;
+  }
+
+  if(bitdepth == 16) {
+    png_set_strip_16(pngPtr);
+    bitdepth = 8;
+  }
+
+  if(bitdepth != 8) {
+    png_destroy_read_struct(&pngPtr, &infoPtr,(png_infopp)0);
+    throw std::runtime_error("PNGs with bitdepths other than 8 are not supported");
+  }
+
+  png_bytep* rowPtrs = new png_bytep[img->height];
+  img->data = new char[img->width*img->height*channels];
+  img->pipe_build_mips = true;
+  const unsigned int stride = img->width * channels;
+  for(size_t i = 0; i < img->height; i++) {
+    png_uint_32 q = (img->height - i - 1) * stride;
+    rowPtrs[i] = (png_bytep)img->data + q;
+  }
+  png_read_image(pngPtr, rowPtrs);
+  delete[] rowPtrs;
+  png_destroy_read_struct(&pngPtr, &infoPtr,(png_infopp)0);
+
+  switch(channels) {
+  case 1: img->format = Image::R8; break;
+  case 2: img->format = Image::RG8; break;
+  case 3: img->format = Image::RGB8; break;
+  case 4: img->format = Image::RGBA8; break;
+  }
+
+  m_loader->loadTexture(img);
 }
 
 void DataManager::loadBuiltinData()

@@ -49,10 +49,10 @@ public:
   void releaseProgram(ShaderProgram*);
 
   // Load the given image object into a GPU texture
-  Texture* loadTexture(Image*);
+  void loadTexture(Image*);
   // perform any needed updates on the Texture object
-  void updateTexture(Texture*);
-  void releaseTexture(Texture*);
+  void updateTexture(Image*);
+  void releaseTexture(Image*);
 
   static bool isThreaded();
 

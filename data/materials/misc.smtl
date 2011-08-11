@@ -15,6 +15,7 @@
 from matdef import *
 
 m = MaterialDef()
-m.vertex_shader = "simple"
-m.fragment_shader = "simple"
+m.vertex_shader = "guiview"
+m.fragment_shader = "guiview"
+m.add_uniform(name="guitex", type=MaterialDef.Texture, value="testimg")
 register_material("simple", m)

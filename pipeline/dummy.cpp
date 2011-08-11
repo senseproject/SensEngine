@@ -39,15 +39,13 @@ ShaderProgram* Loader::loadProgram(std::string, std::string, std::string)
   return 0;
 }
 
-Texture* Loader::loadTexture(Image*)
-{
-  return 0;
-}
-
-void Loader::updateTexture(Texture*)
+void Loader::loadTexture(Image*)
 {}
 
-void Loader::releaseTexture(Texture*)
+void Loader::updateTexture(Image*)
+{}
+
+void Loader::releaseTexture(Image*)
 {}
 
 bool Loader::isThreaded()

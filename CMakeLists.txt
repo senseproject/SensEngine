@@ -31,16 +31,20 @@ ENDIF(WIN32)
 FIND_PACKAGE(OpenGL REQUIRED)
 FIND_PACKAGE(Boost COMPONENTS filesystem system thread REQUIRED)
 FIND_PACKAGE(Python 3 REQUIRED)
+FIND_PACKAGE(PNG REQUIRED)
+FIND_PACKAGE(ZLIB REQUIRED)
 # Disabled until Berkelium can be made to work correctly
 # FIND_PACKAGE(Berkelium REQUIRED)
 
 ADD_DEFINITIONS(-DGLEW_STATIC)
 ADD_DEFINITIONS(-DBOOST_ALL_NO_LIB)
 ADD_DEFINITIONS(-D BOOST_FILESYSTEM_VERSION=3)
+ADD_DEFINITIONS(${PNG_DEFINITIONS})
 INCLUDE_DIRECTORIES("3rdparty/glew")
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${PYTHON_INCLUDE_DIRS})
+INCLUDE_DIRECTORIES(${PNG_INCLUDE_DIR})
 # INCLUDE_DIRECTORIES(${BERKELIUM_INCLUDE_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
@@ -66,6 +70,7 @@ SET(SENSE_pipeline_srcs
 SET(SENSE_pipeline_hdrs
   pipeline/interface.hpp
   pipeline/Drawable.hpp
+  pipeline/Image.hpp
   pipeline/Material.hpp
 )
 
@@ -134,6 +139,12 @@ SET(SENSE_link_libraries
   ${BERKELIUM_LIBRARIES}
 )
 
+SET(SENSE_client_libraries
+  ${PNG_LIBRARIES}
+  ${ZLIB_LIBRARY}
+  SensePipe 
+)
+
 SET(SENSE_world_srcs
   world/Builtins.cpp
   world/DataManager.cpp
@@ -167,7 +178,7 @@ ADD_EXECUTABLE(SensEngine WIN32 main.cpp ${SENSE_client_srcs} ${SENSE_client_hdr
 IF(MSVC)
   SET_TARGET_PROPERTIES(SensEngine PROPERTIES LINK_FLAGS "/ENTRY:mainCRTStartup")
 ENDIF(MSVC)
-TARGET_LINK_LIBRARIES(SensEngine SensePipe ${SENSE_link_libraries})
+TARGET_LINK_LIBRARIES(SensEngine ${SENSE_client_libraries} ${SENSE_link_libraries})
 
 ADD_LIBRARY(PySensEngine SHARED pysense.cpp)
 TARGET_LINK_LIBRARIES(PySensEngine ${SENSE_link_libraries} SenseDummyPipe)

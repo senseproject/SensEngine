@@ -19,12 +19,14 @@
 
 #include "util/queue.hpp"
 
+#include <boost/thread/mutex.hpp>
 #include <unordered_map>
 #include <string>
 
 class Loader;
 struct Material;
 struct DrawableMesh;
+struct Image;
 
 // The data manager loads anything that exists inside
 // a game data package. It should be run on a worker thread,
@@ -52,9 +54,14 @@ private:
   std::unordered_map<std::string, MaterialDef> m_matdefs;
   std::unordered_map<std::string, std::string> m_shaderstrings;
   std::unordered_map<std::string, DrawableMesh*> m_meshes;
+  std::unordered_map<std::string, Image*> m_images;
+
+  boost::mutex m_imglock;
 
   void buildMaterial(std::string);
   std::string loadShaderString(std::string);
+
+  void loadTexture(std::string);
 
   void pushJob(unsigned int, boost::any);
   typedef std::pair<unsigned int, boost::any> job;

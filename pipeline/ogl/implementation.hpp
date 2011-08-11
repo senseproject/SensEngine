@@ -78,14 +78,7 @@ struct Image;
 
 struct Texture
 {
-  virtual ~Texture();
-  
-  GLuint refcnt;
-  GLuint gl_id;
-  volatile GLuint biggest_mip_loaded;
-  std::string name;
-  GLint hres, vres;
-  Image* source;
+  GLuint id;
 };
 
 struct RenderTarget
