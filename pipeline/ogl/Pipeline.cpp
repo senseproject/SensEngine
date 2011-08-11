@@ -17,6 +17,7 @@
 #include "glexcept.hpp"
 #include "../Material.hpp"
 #include "../Drawable.hpp"
+#include "../Image.hpp"
 
 #include <boost/foreach.hpp>
 
@@ -76,9 +77,25 @@ void Pipeline::endFrame()
       continue;
     if(!d.mat->shaders || !d.mat->shaders->gl_id)
       continue;
-    
+
     GL_CHECK(glBindVertexArray(d.mesh->buffer->vao));
     GL_CHECK(glUseProgram(d.mat->shaders->gl_id));
+
+    GLuint texid = 1;
+    BOOST_FOREACH(Uniform u, d.mat->uniforms) {
+      GLuint uniform_id = boost::any_cast<int>(u.pipe_id);
+      if(u.type != UniformDef::Texture)
+        continue;
+      Image* img = boost::any_cast<Image*>(u.value);
+      if(!img->tex)
+        continue;
+
+      GL_CHECK(glActiveTexture(GL_TEXTURE0+texid));
+      GL_CHECK(glBindTexture(GL_TEXTURE_2D, img->tex->id));
+      GL_CHECK(glUniform1i(uniform_id, texid));
+      texid++;
+    }
+
     if(!d.mesh->index_data) {
       GL_CHECK(glDrawArrays(GL_TRIANGLES, 0, d.mesh->data_size / d.mesh->data_stride));
     } else {

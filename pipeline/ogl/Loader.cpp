@@ -149,7 +149,7 @@ void Loader::mainThreadLoadMesh(DrawableMesh* m)
 
 boost::any Loader::queryUniform(ShaderProgram* prog, std::string name)
 {
-  return glGetUniformLocation(prog->gl_id, name.c_str());
+  return boost::any(glGetUniformLocation(prog->gl_id, name.c_str()));
 }
 
 ShaderProgram* Loader::loadProgram(std::string vert, std::string frag, std::string geom) {
@@ -237,6 +237,12 @@ void Loader::loadTexture(Image* img) {
   GL_CHECK(glGenTextures(1, &texid));
   GL_CHECK(glBindTexture(GL_TEXTURE_2D, texid));
   GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, internal_format, img->width, img->height, 0, format, GL_UNSIGNED_BYTE, img->data));
+  GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR));
+  GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+  if(img->pipe_build_mips) {
+    GL_CHECK(glGenerateMipmap(GL_TEXTURE_2D));
+  }
+  GL_CHECK(glFinish());
   img->tex = new Texture;
   img->tex->id = texid;
 }
