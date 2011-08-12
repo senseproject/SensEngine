@@ -63,7 +63,8 @@ private:
 
   void loadTexture(std::string);
 
-  void pushJob(unsigned int, boost::any);
+  void loadMeshFile(std::string);
+
   typedef std::pair<unsigned int, boost::any> job;
   queue<job> m_jobs;
   queue<job> m_main_thread_jobs;

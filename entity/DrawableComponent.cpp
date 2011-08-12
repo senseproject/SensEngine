@@ -23,7 +23,7 @@ DrawableComponent::DrawableComponent(Entity* owner)
 {
   m_owner->m_draw = this;
 
-  m_mesh = m_owner->m_datamgr->loadMesh("__quad__");
+  m_mesh = m_owner->m_datamgr->loadMesh("monkey");
   m_mat = m_owner->m_datamgr->loadMaterial("simple");
 }
 

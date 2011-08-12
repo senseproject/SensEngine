@@ -29,6 +29,7 @@
 enum {
   BUILD_MATERIAL,
   LOAD_TEXTURE,
+  LOAD_MESH,
 
   FINISH_MESH_LOAD,
 };
@@ -57,6 +58,8 @@ void DataManager::exec()
       case LOAD_TEXTURE:
         loadTexture(any_cast<std::string>(j.second));
         break;
+      case LOAD_MESH:
+	loadMeshFile(any_cast<std::string>(j.second));
       }
     }
     boost::this_thread::yield();
@@ -117,7 +120,11 @@ DrawableMesh* DataManager::loadMesh(std::string name)
     i->second->refcnt++;
     return i->second;
   }
-  return NULL;
+  DrawableMesh* msh = new DrawableMesh;
+  msh->buffer = 0;
+  m_meshes.insert(std::make_pair(name, msh));
+  m_jobs.push(job(LOAD_MESH, name));
+  return msh;
 }
 
 void DataManager::buildMaterial(std::string name)
@@ -282,6 +289,101 @@ void DataManager::loadTexture(std::string name)
   }
 
   m_loader->loadTexture(img);
+}
+
+#pragma pack(push, 1)
+namespace {
+  static const char sbm_magic[] = "SBM\0";
+  const unsigned sbm_hasIndices = 0x01;
+  const unsigned sbm_streamData = 0x02;
+  const unsigned sbm_calcNormal = 0x06;
+  const unsigned sbm_calcTangent = 0x0A;
+  const unsigned sbm_calcNorTan = 0x0C; // intentionally not masking Stream here
+
+  const unsigned sbm_attr_normalized = 0x80;
+  const unsigned sbm_attr_integer = 0x40;
+  const unsigned sbm_sizemask = 0x07; // TODO: save ourselves a bit here
+
+  struct SbmHeader {
+    char magic[4];
+    uint32_t num_verts;
+    uint16_t num_attribs;
+    uint16_t vert_stride;
+    uint16_t flags;
+  };
+
+  struct SbmAttrib {
+    uint16_t type;
+    uint16_t id;
+    uint16_t start_offset;
+    uint8_t size; // 1-4. Normalized/Integer are encoded in this field
+  };
+}
+#pragma pack(pop)
+
+void DataManager::loadMeshFile(std::string name)
+{
+  DrawableMesh* msh = m_meshes[name];
+
+  boost::filesystem::path mdl_path("../data/models");
+  mdl_path = mdl_path / (name+".sbm");
+  if(!exists(mdl_path))
+    throw std::runtime_error("Can't find model file " + mdl_path.string());
+  boost::filesystem::ifstream stream;
+  stream.open(mdl_path, std::ios_base::binary);
+
+  SbmHeader head;
+  stream.read((char*)&head, sizeof(SbmHeader));
+  if(memcmp(head.magic, sbm_magic, 4) != 0)
+    throw std::runtime_error("QBM signature verification failed");
+  if(head.flags & sbm_calcNorTan)
+    throw std::runtime_error("Runtime normal/tangent calculation is not yet implemented");
+  msh->data_size = head.num_verts*head.vert_stride;
+  msh->data_stride = head.vert_stride;
+  msh->data = new char[msh->data_size];
+  stream.read((char*)msh->data, msh->data_size);
+
+  if(head.flags & sbm_hasIndices) {
+    uint16_t idx_count;
+    uint16_t idx_type;
+    stream.read((char*)&idx_count, 2);
+    stream.read((char*)&idx_type, 2);
+    msh->index_type = (DrawableMesh::AttribType)idx_type;
+    msh->index_count = idx_count;
+    switch(msh->index_type) {
+    case DrawableMesh::UByte:
+      msh->index_data = new char[idx_count];
+      stream.read((char*)msh->index_data, idx_count);
+      break;
+    case DrawableMesh::UShort:
+      msh->index_data = new char[idx_count*2];
+      stream.read((char*)msh->index_data, idx_count*2);
+      break;
+    default:
+      throw std::runtime_error("Can't read SBM indices: bad index type");
+    }
+  } else {
+    msh->index_data = 0;
+    msh->index_count = 0;
+  }
+
+  for(size_t i = 0; i < head.num_attribs; ++i) {
+    SbmAttrib attr;
+    stream.read((char*)&attr, sizeof(SbmAttrib));
+    DrawableMesh::Attribute a;
+    a.type = (DrawableMesh::AttribType)attr.type;
+    a.loc = (DrawableMesh::AttribLocation)attr.id;
+    a.start = attr.start_offset;
+    a.size = attr.size & sbm_sizemask;
+    if(attr.size & sbm_attr_normalized)
+      a.special = DrawableMesh::Normalize;
+    else if(attr.size & sbm_attr_integer)
+      a.special = DrawableMesh::Integer;
+    msh->attributes.push_back(a);
+  }
+
+  m_loader->loadMesh(msh);
+  m_main_thread_jobs.push(job(FINISH_MESH_LOAD, msh));
 }
 
 void DataManager::loadBuiltinData()
