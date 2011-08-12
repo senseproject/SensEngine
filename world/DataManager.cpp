@@ -208,7 +208,7 @@ void DataManager::loadTexture(std::string name)
 
   char pngsig[8];
   stream.read(pngsig, 8);
-  int is_png = png_sig_cmp((png_const_bytep)pngsig, 0, 8);
+  int is_png = png_sig_cmp((png_bytep)pngsig, 0, 8);
   if(is_png != 0)
     throw std::runtime_error(img_path.string() + " is not a PNG file");
   png_structp pngPtr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);

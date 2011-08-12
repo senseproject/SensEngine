@@ -137,11 +137,11 @@ SET(SENSE_link_libraries
   ${PYTHON_LIBRARY}
   ${PLATFORM_LIBRARIES}
   ${BERKELIUM_LIBRARIES}
+  ${PNG_LIBRARIES}
+  ${ZLIB_LIBRARY}
 )
 
 SET(SENSE_client_libraries
-  ${PNG_LIBRARIES}
-  ${ZLIB_LIBRARY}
   SensePipe 
 )
 
