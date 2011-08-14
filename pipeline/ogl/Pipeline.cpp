@@ -107,17 +107,30 @@ void Pipeline::endFrame()
   GL_CHECK(glBlitFramebuffer(0, 0, self->current_framebuffer->width, self->current_framebuffer->height, 0, 0, self->width, self->height, GL_COLOR_BUFFER_BIT, GL_NEAREST));
 }
 
+// Here's our render target documentation!
+// R,G,B,A = color
+// X,Y,Z = Normal components
+// S = Specular Blend
+// Em = emission
+// Se = specular exponent
+// 0: [R][G][B][A]
+// 1: [X [Y][Z][S]
+// 2: [Em  ][Se  ]
+//
+// This is also (shockingly enough) the packing that the default material shader will expect for texture files
+// Alpha is stored even though we'll never use it directly, because it's needed for alpha-to-coverage support
 RenderTarget* Pipeline::createRenderTarget(uint32_t width, uint32_t height, bool mipmap)
 {
-  GLuint texids[4];
+  GLuint texids[5];
   GLuint fboids[2];
   glGenFramebuffers(2, fboids);
-  glGenTextures(4, texids);
+  glGenTextures(5, texids);
   RenderTarget rt;
   rt.depth_id = texids[0];
   rt.color_id = texids[1];
   rt.normal_id = texids[2];
-  rt.lighting_id = texids[3];
+  rt.matprop_id = texids[3];
+  rt.lighting_id = texids[4];
   rt.lbuffer_id = fboids[0];
   rt.gbuffer_id = fboids[1];
 
@@ -141,9 +154,12 @@ RenderTarget* Pipeline::createRenderTarget(uint32_t width, uint32_t height, bool
   GL_CHECK(glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, rt.color_id));
   GL_CHECK(glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, self->cur_fsaa, GL_RGBA8, width, height, GL_FALSE));
   GL_CHECK(glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, rt.normal_id));
+  GL_CHECK(glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, self->cur_fsaa, GL_RGBA8, width, height, GL_FALSE));
+  GL_CHECK(glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, rt.matprop_id));
   GL_CHECK(glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, self->cur_fsaa, GL_RG16F, width, height, GL_FALSE));
   GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, rt.color_id, 0));
   GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D_MULTISAMPLE, rt.normal_id, 0));
+  GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D_MULTISAMPLE, rt.matprop_id, 0));
   GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D_MULTISAMPLE, rt.depth_id, 0));
   GL_CHECK(glViewport(0, 0, width, height));
   FBO_CHECK;

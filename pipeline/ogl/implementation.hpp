@@ -88,6 +88,7 @@ struct RenderTarget
   GLuint depth_id;
   GLuint color_id;
   GLuint normal_id;
+  GLuint matprop_id;
   GLuint lighting_id;
   bool build_mips;
   bool dirty;
