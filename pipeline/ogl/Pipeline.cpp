@@ -34,6 +34,8 @@ Pipeline::Pipeline()
     self->fsaa_levels.insert(fsaa);
     fsaa -= 2;
   } while(fsaa > 1);
+  if(fsaa == 0) // there's no way we'll get a 1 if we start with an even number of FSAA samples
+    self->fsaa_levels.insert(1);
 
   // Enable some standard state
   GL_CHECK(glEnable(GL_MULTISAMPLE));
