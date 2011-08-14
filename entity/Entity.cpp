@@ -58,9 +58,13 @@ void EntityManager::destroyEntity(boost::uuids::uuid id)
   if (i != m_entities.end()) {
     Entity* e = i->second;
     m_entities.erase(i);
-    for(auto i = e->m_components.begin(); i != e->m_components.end(); ++i)
-      delete *i;
-    delete e;
+    // components remove themselves from an entity when deleted.
+    // this form makes sure that all works correctly
+    auto j = e->m_components.begin();
+    while(j != e->m_components.end()) {
+      delete *j;
+      j = e->m_components.begin();
+    }
   }
 }
 
