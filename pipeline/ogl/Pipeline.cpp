@@ -190,7 +190,7 @@ void PipelineImpl::doRenderPass(Pipeline::RenderPass pass)
     DrawTaskData dtd = i->second;
 
     // break out if the data isn't fully loaded
-    if(!dto.mat->shaders || !dto.mesh->buffer)
+    if(!dto.mat->shaders || !dto.mesh->buffer || !dto.mesh->buffer->vao)
       continue;
 
     // bind the shader and vertex array
