@@ -379,6 +379,8 @@ void DataManager::loadMeshFile(std::string name)
       a.special = DrawableMesh::Normalize;
     else if(attr.size & sbm_attr_integer)
       a.special = DrawableMesh::Integer;
+    else
+      a.special = DrawableMesh::None;
     msh->attributes.push_back(a);
   }
 

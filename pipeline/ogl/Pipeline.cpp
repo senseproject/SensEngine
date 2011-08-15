@@ -208,7 +208,11 @@ void PipelineImpl::doRenderPass(Pipeline::RenderPass pass)
         {
           Image *img = boost::any_cast<Image*>(j->value);
           GL_CHECK(glActiveTexture(GL_TEXTURE0+current_tex));
-          GL_CHECK(glBindTexture(GL_TEXTURE_2D, img->tex->id));
+          if(img->tex) {
+            GL_CHECK(glBindTexture(GL_TEXTURE_2D, img->tex->id));
+          } else {
+            GL_CHECK(glBindTexture(GL_TEXTURE_2D, 0));
+          }
           GL_CHECK(glUniform1i(uid, current_tex));
           current_tex++;
           break;
