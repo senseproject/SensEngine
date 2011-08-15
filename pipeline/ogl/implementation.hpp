@@ -16,7 +16,7 @@
 #define SENSE_PIPELINE_OGL_IMPLEMENTATION_HPP
 
 #include "GL/glew.h"
-#include "../DefinitionTypes.hpp"
+#include "../interface.hpp"
 
 #include <memory>
 #include <set>
@@ -24,6 +24,9 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+
+#define SENSE_MAX_INSTANCES 128 // completely made-up number. No basis in any testing
+#define SENSE_MAX_VTX_BONES 128 // ditto
 
 class SenseClient;
 
@@ -103,10 +106,31 @@ struct DrawableBuffer
   GLenum idx_type;
 };
 
-struct DrawTask
+struct DrawTaskObject
 {
   DrawableMesh* mesh;
   Material* mat;
+};
+
+inline bool operator==(const DrawTaskObject& lhs, const DrawTaskObject& rhs) {
+  return lhs.mesh == rhs.mesh && lhs.mat == rhs.mat;
+}
+
+namespace std {
+  template <>
+  struct hash<DrawTaskObject> : public unary_function<ShaderSet, size_t> {
+    size_t operator()(const DrawTaskObject& k) const {
+      size_t result = 0;
+      boost::hash_combine(result, k.mesh);
+      boost::hash_combine(result, k.mat);
+      return result;
+    }
+  };
+}
+
+struct DrawTaskData
+{
+  std::vector<glm::mat4> transforms; // instanced matrices for normal pass; bones for skinning pass
 };
 
 struct PipelineImpl 
@@ -118,7 +142,9 @@ struct PipelineImpl
 
   GLuint width, height;
 
-  std::vector<DrawTask> tasks;
+  std::unordered_multimap<DrawTaskObject, DrawTaskData> tasks[Pipeline::PassCount];
+
+  void doRenderPass(Pipeline::RenderPass pass);
 };
 
 struct LoaderImpl

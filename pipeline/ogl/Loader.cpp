@@ -27,9 +27,8 @@ Loader::Loader()
   : self(new LoaderImpl)
 {
   std::stringstream ss;
-  unsigned int num_instances = 64; // TODO: fetch from config system
   ss << "#version 150" << std::endl;
-  ss << "#define SENSE_MAX_INSTANCES " << num_instances << std::endl;
+  ss << "#define SENSE_MAX_INSTANCES " << SENSE_MAX_INSTANCES << std::endl;
   ss << std::endl;
   self->shader_header = ss.str();
 }
@@ -111,6 +110,7 @@ void Loader::mainThreadLoadMesh(DrawableMesh* m)
   GL_CHECK(glBindBuffer(GL_ARRAY_BUFFER, m->buffer->vtxbuffer));
   GL_CHECK(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m->buffer->idxbuffer));
 
+  std::set<DrawableMesh::AttribLocation> used_locs;
   auto end = m->attributes.end();
   for(auto i = m->attributes.begin(); i != end; ++i) {
     GLenum type = 0;
@@ -142,7 +142,26 @@ void Loader::mainThreadLoadMesh(DrawableMesh* m)
       GLboolean normalized = (i->special == DrawableMesh::Normalize) ? GL_TRUE : GL_FALSE;
       GL_CHECK(glVertexAttribPointer(i->loc, i->size, type, normalized, m->data_stride, (GLvoid*)(i->start)));
     }
+    used_locs.insert(i->loc);
   }
+
+  // Set sane default values for all parameters that aren't defined in this mesh
+  if(!used_locs.count(DrawableMesh::Pos))
+    GL_CHECK(glVertexAttrib3f(DrawableMesh::Pos, 0.f, 0.f, 0.f));
+  if(!used_locs.count(DrawableMesh::Nor))
+    GL_CHECK(glVertexAttrib3f(DrawableMesh::Nor, 0.f, 0.f, 1.f));
+  if(!used_locs.count(DrawableMesh::Tan))
+    GL_CHECK(glVertexAttrib3f(DrawableMesh::Tan, 0.f, 1.f, 0.f));
+  if(!used_locs.count(DrawableMesh::Col))
+    GL_CHECK(glVertexAttrib3f(DrawableMesh::Col, 0.f, 0.f, 0.f));
+  if(!used_locs.count(DrawableMesh::Te0))
+    GL_CHECK(glVertexAttrib2f(DrawableMesh::Te0, 0.f, 0.f));
+  if(!used_locs.count(DrawableMesh::Te1))
+    GL_CHECK(glVertexAttrib2f(DrawableMesh::Te1, 0.f, 0.f));
+  if(!used_locs.count(DrawableMesh::SkinIdx))
+    GL_CHECK(glVertexAttrib4s(DrawableMesh::SkinIdx, 0, 0, 0, 0));
+  if(!used_locs.count(DrawableMesh::SkinWeight))
+    GL_CHECK(glVertexAttrib4f(DrawableMesh::SkinWeight, 0.f, 0.f, 0.f, 0.f));
 
   m->buffer->vao = vao;
 }

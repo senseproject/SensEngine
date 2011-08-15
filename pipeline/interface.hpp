@@ -67,6 +67,12 @@ private:
 class Pipeline
 {
 public:
+  enum RenderPass {
+    PassStandard,
+    PassPostLighting,
+    PassPostEffect,
+    PassCount
+  };
   Pipeline();
   ~Pipeline();
 
@@ -74,7 +80,8 @@ public:
   // If the platform implementation supports instancing, use_instancing can be set to false to disable
   // that feature. If instancing is not supported, use_instancing has no effect. Instancing is enabled
   // by default for performance reasons.
-  void addDrawTask(DrawableMesh* data, Material* mat, glm::mat4 transform, bool use_instancing=true);
+  void addDrawTask(DrawableMesh* data, Material* mat, glm::mat4 transform, RenderPass pass=PassStandard);
+  void addSkinnedDrawTask(DrawableMesh* data, Material* mat, std::vector<glm::mat4>& bones, RenderPass pass=PassStandard);
 
   // Add a lamp to be used for rendering this frame
   void addLamp(Lamp* lamp);

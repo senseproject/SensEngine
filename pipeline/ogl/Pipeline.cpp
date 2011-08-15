@@ -48,12 +48,19 @@ Pipeline::Pipeline()
 Pipeline::~Pipeline()
 {}
 
-void Pipeline::addDrawTask(DrawableMesh* mesh, Material* mat, glm::mat4 mv, bool instance)
+void Pipeline::addDrawTask(DrawableMesh* mesh, Material* mat, glm::mat4 mv, RenderPass pass)
 {
-  DrawTask d;
+  DrawTaskObject d;
   d.mesh = mesh;
   d.mat = mat;
-  self->tasks.push_back(d);
+  auto i = self->tasks[pass].find(d);
+  if(i != self->tasks[pass].end()) {
+    i->second.transforms.push_back(mv);
+  } else {
+    DrawTaskData dt;
+    dt.transforms.push_back(mv);
+    self->tasks[pass].insert(std::make_pair(d, dt));
+  }
 }
 
 
@@ -63,48 +70,18 @@ void Pipeline::render()
     return; // Skip rendering if there is no framebuffer
   GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, self->current_framebuffer->gbuffer_id));
   GL_CHECK(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
-  // TODO: loop through objects and fill the gbuffer
+  self->doRenderPass(Pipeline::PassStandard);
   GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, self->current_framebuffer->lbuffer_id));
   GL_CHECK(glClear(GL_COLOR_BUFFER_BIT));
   // TODO: loop through lights and fill the lbuffer
+  self->doRenderPass(Pipeline::PassPostLighting);
   self->current_framebuffer->dirty = true;
 }
   
 void Pipeline::endFrame()
 {
   GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, self->current_framebuffer->lbuffer_id));
-  // TODO: draw panels
-  BOOST_FOREACH(DrawTask d, self->tasks) {
-    if(!d.mesh->buffer || !d.mesh->buffer->vao)
-      continue;
-    if(!d.mat->shaders || !d.mat->shaders->gl_id)
-      continue;
-
-    GL_CHECK(glBindVertexArray(d.mesh->buffer->vao));
-    GL_CHECK(glUseProgram(d.mat->shaders->gl_id));
-
-    GLuint texid = 1;
-    BOOST_FOREACH(Uniform u, d.mat->uniforms) {
-      GLuint uniform_id = boost::any_cast<int>(u.pipe_id);
-      if(u.type != UniformDef::Texture)
-        continue;
-      Image* img = boost::any_cast<Image*>(u.value);
-      if(!img->tex)
-        continue;
-
-      GL_CHECK(glActiveTexture(GL_TEXTURE0+texid));
-      GL_CHECK(glBindTexture(GL_TEXTURE_2D, img->tex->id));
-      GL_CHECK(glUniform1i(uniform_id, texid));
-      texid++;
-    }
-
-    if(!d.mesh->index_data) {
-      GL_CHECK(glDrawArrays(GL_TRIANGLES, 0, d.mesh->data_size / d.mesh->data_stride));
-    } else {
-      GL_CHECK(glDrawElements(GL_TRIANGLES, d.mesh->index_count, d.mesh->buffer->idx_type, 0));
-    }
-  }
-  self->tasks.clear();
+  self->doRenderPass(Pipeline::PassPostEffect);
   GL_CHECK(glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0));
   GL_CHECK(glBlitFramebuffer(0, 0, self->current_framebuffer->width, self->current_framebuffer->height, 0, 0, self->width, self->height, GL_COLOR_BUFFER_BIT, GL_NEAREST));
 }
@@ -173,12 +150,13 @@ RenderTarget* Pipeline::createRenderTarget(uint32_t width, uint32_t height, bool
 
 void Pipeline::destroyRenderTarget(RenderTarget* rt)
 {
-  GLuint texids[4];
+  GLuint texids[5];
   GLuint fboids[2];
   texids[0] = rt->depth_id;
   texids[1] = rt->color_id;
   texids[2] = rt->normal_id;
-  texids[3] = rt->lighting_id;
+  texids[3] = rt->matprop_id;
+  texids[4] = rt->lighting_id;
   fboids[0] = rt->lbuffer_id;
   fboids[1] = rt->gbuffer_id;
   GL_CHECK(glDeleteTextures(4, texids));
@@ -202,4 +180,84 @@ void Pipeline::setViewport(uint32_t width, uint32_t height)
 Loader* Pipeline::createLoader()
 {
   return new Loader;
+}
+
+void PipelineImpl::doRenderPass(Pipeline::RenderPass pass)
+{
+  auto end = tasks[pass].end();
+  for(auto i = tasks[pass].begin(); i != end; ++i) {
+    DrawTaskObject dto = i->first;
+    DrawTaskData dtd = i->second;
+
+    // break out if the data isn't fully loaded
+    if(!dto.mat->shaders || !dto.mesh->buffer)
+      continue;
+
+    // bind the shader and vertex array
+    GL_CHECK(glUseProgram(dto.mat->shaders->gl_id));
+    GL_CHECK(glBindVertexArray(dto.mesh->buffer->vao));
+
+    // loop over the uniforms. Set aside the modelview matrix if found.
+    GLint mv_id = -1;
+    GLuint current_tex = 0;
+    auto uend = dto.mat->uniforms.end();
+    for(auto j = dto.mat->uniforms.begin(); j != uend; j++) {
+      GLuint uid = boost::any_cast<int>(j->pipe_id);
+      switch(j->type) {
+      case UniformDef::Texture:
+        {
+          Image *img = boost::any_cast<Image*>(j->value);
+          GL_CHECK(glActiveTexture(GL_TEXTURE0+current_tex));
+          GL_CHECK(glBindTexture(GL_TEXTURE_2D, img->tex->id));
+          GL_CHECK(glUniform1i(uid, current_tex));
+          current_tex++;
+          break;
+        }
+      case UniformDef::ModelView:
+        {
+          mv_id = uid;
+          break;
+        }
+      case UniformDef::BoneMatrices:
+        {
+          size_t mat_count = dtd.transforms.size();
+          if(mat_count > SENSE_MAX_VTX_BONES)
+            mat_count = SENSE_MAX_VTX_BONES;
+          glUniformMatrix4fv(uid, mat_count, GL_FALSE, (GLfloat*)(&(dtd.transforms[0])));
+          break;
+        }
+      case UniformDef::DepthInfo:
+      case UniformDef::LightColor:
+      case UniformDef::LightPosition:
+      case UniformDef::LightRadius:
+      case UniformDef::Projection:
+      case UniformDef::Webview:
+      default:
+        throw std::runtime_error("Tried to use unimplemenented uniform type");
+      }
+    }
+    if(mv_id != -1) {
+      // we have a model-view matrix array handle. We need to draw one or more instance passes now.
+      size_t cur_transform = 0;
+      size_t remaining_mvs = dtd.transforms.size();
+      do {
+        size_t batch_size = remaining_mvs <= SENSE_MAX_INSTANCES ? remaining_mvs : SENSE_MAX_INSTANCES;
+        GLfloat* data_ptr = (GLfloat*)&dtd.transforms[cur_transform];
+        GL_CHECK(glUniformMatrix4fv(mv_id, batch_size, GL_FALSE, data_ptr));
+        if(dto.mesh->index_data) {
+          GL_CHECK(glDrawElementsInstanced(GL_TRIANGLES, dto.mesh->index_count, dto.mesh->buffer->idx_type, 0, batch_size));
+        } else {
+          GL_CHECK(glDrawArraysInstanced(GL_TRIANGLES, 0, dto.mesh->data_size / dto.mesh->data_stride, batch_size));
+        }
+        cur_transform += batch_size;
+        remaining_mvs -= batch_size;
+      } while (remaining_mvs);
+    } else {
+      if(dto.mesh->index_data) {
+        GL_CHECK(glDrawElements(GL_TRIANGLES, dto.mesh->index_count, dto.mesh->buffer->idx_type, 0));
+      } else {
+        GL_CHECK(glDrawArrays(GL_TRIANGLES, 0, dto.mesh->data_size / dto.mesh->data_stride));
+      }
+    }
+  }
 }

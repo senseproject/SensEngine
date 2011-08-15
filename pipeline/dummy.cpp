@@ -62,7 +62,7 @@ Pipeline::Pipeline()
 Pipeline::~Pipeline()
 {}
 
-void Pipeline::addDrawTask(DrawableMesh*, Material*, glm::mat4, bool)
+void Pipeline::addDrawTask(DrawableMesh*, Material*, glm::mat4, Pipeline::RenderPass)
 {}
 
 void Pipeline::addLamp(Lamp*)
