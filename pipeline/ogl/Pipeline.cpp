@@ -19,6 +19,8 @@
 #include "../Drawable.hpp"
 #include "../Image.hpp"
 
+#include "world/DataManager.hpp"
+
 #include <boost/foreach.hpp>
 
 Pipeline::Pipeline()
@@ -42,7 +44,11 @@ Pipeline::Pipeline()
   GL_CHECK(glEnable(GL_FRAMEBUFFER_SRGB));
   GL_CHECK(glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE));
   GL_CHECK(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
-  GL_CHECK(glClearColor(0.8f, 0.8f, 0.9f, 1.0f));
+  GL_CHECK(glDepthFunc(GL_LEQUAL));
+  // cull face disabled until I make sure everything is consistently wound
+//  GL_CHECK(glEnable(GL_CULL_FACE));
+//  GL_CHECK(glFrontFace(GL_CW));
+  GL_CHECK(glClearColor(0.0f, 0.0f, 0.0f, 1.0f));
 }
 
 Pipeline::~Pipeline()
@@ -50,19 +56,20 @@ Pipeline::~Pipeline()
 
 void Pipeline::addDrawTask(DrawableMesh* mesh, Material* mat, glm::mat4 mv, RenderPass pass)
 {
+  if(pass >= Pipeline::PassLighting)
+    throw std::logic_error("Tried to add user mesh for non-user pass");
+  self->addDrawTask(mesh, mat, mv, pass);
+}
+
+void Pipeline::addSkinnedDrawTask(DrawableMesh* mesh, Material* mat, std::vector<glm::mat4>& bones, RenderPass pass)
+{
   DrawTaskObject d;
   d.mesh = mesh;
   d.mat = mat;
-  auto i = self->tasks[pass].find(d);
-  if(i != self->tasks[pass].end()) {
-    i->second.transforms.push_back(mv);
-  } else {
-    DrawTaskData dt;
-    dt.transforms.push_back(mv);
-    self->tasks[pass].insert(std::make_pair(d, dt));
-  }
+  DrawTaskData dt;
+  dt.transforms = bones;
+  self->tasks[pass].insert(std::make_pair(d, dt));
 }
-
 
 void Pipeline::render()
 {
@@ -70,10 +77,15 @@ void Pipeline::render()
     return; // Skip rendering if there is no framebuffer
   GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, self->current_framebuffer->gbuffer_id));
   GL_CHECK(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+  GL_CHECK(glEnable(GL_DEPTH_TEST));
+  GL_CHECK(glDepthMask(GL_TRUE));
   self->doRenderPass(Pipeline::PassStandard);
   GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, self->current_framebuffer->lbuffer_id));
   GL_CHECK(glClear(GL_COLOR_BUFFER_BIT));
-  // TODO: loop through lights and fill the lbuffer
+  GL_CHECK(glDepthMask(GL_FALSE));
+  GL_CHECK(glDisable(GL_DEPTH_TEST));
+  self->addDrawTask(self->screenQuad, self->flatLight, glm::mat4(1.f), Pipeline::PassLighting);
+  self->doRenderPass(Pipeline::PassLighting);
   self->doRenderPass(Pipeline::PassPostLighting);
   self->current_framebuffer->dirty = true;
 }
@@ -93,11 +105,13 @@ void Pipeline::endFrame()
 // Em = emission
 // Se = specular exponent
 // 0: [R][G][B][A]
-// 1: [X [Y][Z][S]
+// 1: [X][Y][Z][S]
 // 2: [Em  ][Se  ]
 //
 // This is also (shockingly enough) the packing that the default material shader will expect for texture files
 // Alpha is stored even though we'll never use it directly, because it's needed for alpha-to-coverage support
+
+static GLenum buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
 RenderTarget* Pipeline::createRenderTarget(uint32_t width, uint32_t height, bool mipmap)
 {
   GLuint texids[5];
@@ -141,6 +155,7 @@ RenderTarget* Pipeline::createRenderTarget(uint32_t width, uint32_t height, bool
   GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D_MULTISAMPLE, rt.matprop_id, 0));
   GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D_MULTISAMPLE, rt.depth_id, 0));
   GL_CHECK(glViewport(0, 0, width, height));
+  GL_CHECK(glDrawBuffers(3, buffers));
   FBO_CHECK;
 
   RenderTarget* result = new RenderTarget;
@@ -180,6 +195,27 @@ void Pipeline::setViewport(uint32_t width, uint32_t height)
 Loader* Pipeline::createLoader()
 {
   return new Loader;
+}
+
+void Pipeline::loadPipelineData(DataManager* mgr)
+{
+  self->screenQuad = mgr->loadMesh("__quad__");
+  self->flatLight = mgr->loadMaterial("flatlight");
+}
+
+void PipelineImpl::addDrawTask(DrawableMesh* mesh, Material* mat, glm::mat4 mv, Pipeline::RenderPass pass)
+{
+  DrawTaskObject d;
+  d.mesh = mesh;
+  d.mat = mat;
+  auto i = tasks[pass].find(d);
+  if(i != tasks[pass].end()) {
+    i->second.transforms.push_back(mv);
+  } else {
+    DrawTaskData dt;
+    dt.transforms.push_back(mv);
+    tasks[pass].insert(std::make_pair(d, dt));
+  }
 }
 
 void PipelineImpl::doRenderPass(Pipeline::RenderPass pass)
@@ -230,6 +266,30 @@ void PipelineImpl::doRenderPass(Pipeline::RenderPass pass)
           glUniformMatrix4fv(uid, mat_count, GL_FALSE, (GLfloat*)(&(dtd.transforms[0])));
           break;
         }
+      case UniformDef::GBufColor:
+        {
+          GL_CHECK(glActiveTexture(GL_TEXTURE0+current_tex));
+          GL_CHECK(glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, current_framebuffer->color_id));
+          GL_CHECK(glUniform1i(uid, current_tex));
+          current_tex++;
+          break;
+        }
+      case UniformDef::GBufNormal:
+        {
+          GL_CHECK(glActiveTexture(GL_TEXTURE0+current_tex));
+          GL_CHECK(glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, current_framebuffer->normal_id));
+          GL_CHECK(glUniform1i(uid, current_tex));
+          current_tex++;
+          break;
+        }
+      case UniformDef::GBufMatProp:
+        {
+          GL_CHECK(glActiveTexture(GL_TEXTURE0+current_tex));
+          GL_CHECK(glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, current_framebuffer->matprop_id));
+          GL_CHECK(glUniform1i(uid, current_tex));
+          current_tex++;
+          break;
+        }
       case UniformDef::DepthInfo:
       case UniformDef::LightColor:
       case UniformDef::LightPosition:
@@ -239,6 +299,18 @@ void PipelineImpl::doRenderPass(Pipeline::RenderPass pass)
       default:
         throw std::runtime_error("Tried to use unimplemenented uniform type");
       }
+    }
+    GL_CHECK(glValidateProgram(dto.mat->shaders->gl_id));
+    GLint status;
+    GL_CHECK(glGetProgramiv(dto.mat->shaders->gl_id, GL_VALIDATE_STATUS, &status));
+    if(status == GL_FALSE) {
+      int info_log_length;
+      GL_CHECK(glGetShaderiv(dto.mat->shaders->gl_id, GL_INFO_LOG_LENGTH, &info_log_length));
+      char *log = new char[info_log_length];
+      GL_CHECK(glGetShaderInfoLog(dto.mat->shaders->gl_id, info_log_length, &info_log_length, log));
+      std::string infolog = log;
+      delete[] log;
+      throw std::runtime_error("Error validating shader: " + infolog);
     }
     if(mv_id != -1) {
       // we have a model-view matrix array handle. We need to draw one or more instance passes now.

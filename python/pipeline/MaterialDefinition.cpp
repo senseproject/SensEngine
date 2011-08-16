@@ -177,6 +177,10 @@ void initMaterialDefinition(PyObject *m) {
   PyDict_AddEnum(PyMaterialDef_Type.tp_dict, UniformDef, Webview);
   PyDict_AddEnum(PyMaterialDef_Type.tp_dict, UniformDef, ModelView);
   PyDict_AddEnum(PyMaterialDef_Type.tp_dict, UniformDef, Projection);
+  PyDict_AddEnum(PyMaterialDef_Type.tp_dict, UniformDef, GBufColor);
+  PyDict_AddEnum(PyMaterialDef_Type.tp_dict, UniformDef, GBufNormal);
+  PyDict_AddEnum(PyMaterialDef_Type.tp_dict, UniformDef, GBufMatProp);
+  PyDict_AddEnum(PyMaterialDef_Type.tp_dict, UniformDef, LightBuf);
   PyDict_AddEnum(PyMaterialDef_Type.tp_dict, UniformDef, DepthInfo);
   PyDict_AddEnum(PyMaterialDef_Type.tp_dict, UniformDef, LightPosition);
   PyDict_AddEnum(PyMaterialDef_Type.tp_dict, UniformDef, LightColor);

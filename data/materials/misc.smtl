@@ -19,3 +19,11 @@ m.vertex_shader = "simple"
 m.fragment_shader = "simple"
 m.add_uniform(name="teximg", type=MaterialDef.Texture, value="testimg")
 register_material("simple", m)
+
+m = MaterialDef()
+m.vertex_shader = "flatlight"
+m.fragment_shader = "flatlight"
+m.add_uniform(name="gcol", type=MaterialDef.GBufColor)
+m.add_uniform(name="gnor", type=MaterialDef.GBufNormal)
+m.add_uniform(name="gmat", type=MaterialDef.GBufMatProp)
+register_material("flatlight", m)

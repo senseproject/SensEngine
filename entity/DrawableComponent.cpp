@@ -37,5 +37,5 @@ void DrawableComponent::receiveMessage(const Message& msg)
 
 void DrawableComponent::draw(Pipeline* pipe)
 {
-  pipe->addDrawTask(m_mesh, m_mat, glm::mat4(1.f), Pipeline::PassPostEffect);
+  pipe->addDrawTask(m_mesh, m_mat, glm::mat4(1.f), Pipeline::PassStandard);
 }

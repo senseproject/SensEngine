@@ -32,6 +32,8 @@ struct Lamp;
 struct LoaderImpl;
 struct PipelineImpl;
 
+class DataManager;
+
 class Loader
 {
 public:
@@ -71,6 +73,12 @@ public:
     PassStandard,
     PassPostLighting,
     PassPostEffect,
+
+    // Start of system passes. You'll throw exceptions if you try to use these outside the pipeline. I'm not joking.
+    PassLighting,
+    PassPreToneEffect,
+    PassToneMap,
+    PassPostToneEffect,
     PassCount
   };
   Pipeline();
@@ -106,6 +114,9 @@ public:
 
   // Create a Loader instance to go with this Pipeline
   Loader* createLoader();
+
+  // Load any resources the pipeline needs to have direct references to
+  void loadPipelineData(DataManager*);
 
 private:
   PipelineImpl* self;

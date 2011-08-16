@@ -144,7 +144,11 @@ struct PipelineImpl
 
   std::unordered_multimap<DrawTaskObject, DrawTaskData> tasks[Pipeline::PassCount];
 
+  void addDrawTask(DrawableMesh* mesh, Material* mat, glm::mat4 mv, Pipeline::RenderPass pass);
   void doRenderPass(Pipeline::RenderPass pass);
+
+  DrawableMesh* screenQuad;
+  Material* flatLight;
 };
 
 struct LoaderImpl

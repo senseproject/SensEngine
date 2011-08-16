@@ -53,6 +53,12 @@ struct UniformDef {
     Projection,
     DepthInfo,
 
+    // Render targets
+    GBufColor,
+    GBufNormal,
+    GBufMatProp,
+    LightBuf,
+
     // light-specific types
     LightColor,
     LightRadius,

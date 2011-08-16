@@ -211,6 +211,7 @@ ShaderProgram* Loader::loadProgram(std::string vert, std::string frag, std::stri
 
   GL_CHECK(glBindFragDataLocation(prog->gl_id, 0, "fcol"));
   GL_CHECK(glBindFragDataLocation(prog->gl_id, 1, "fnor"));
+  GL_CHECK(glBindFragDataLocation(prog->gl_id, 2, "fmat"));
   GL_CHECK(glBindAttribLocation(prog->gl_id, DrawableMesh::Pos, "pos"));
   GL_CHECK(glBindAttribLocation(prog->gl_id, DrawableMesh::Tan, "tan"));
   GL_CHECK(glBindAttribLocation(prog->gl_id, DrawableMesh::Col, "col"));

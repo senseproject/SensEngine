@@ -59,6 +59,7 @@ SenseClient::SenseClient()
   readScriptsDir("../data/materials", ".smtl");
   readScriptsDir("../data/definitions", ".sdef");
 
+  m_pipeline->loadPipelineData(m_datamgr);
   m_test_ent = m_manager->createEntity("dummy");
 };
 
