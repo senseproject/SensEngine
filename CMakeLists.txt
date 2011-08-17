@@ -2,18 +2,26 @@ PROJECT(SensEngine)
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${SensEngine_SOURCE_DIR}/cmake)
 IF(CMAKE_COMPILER_IS_GNUCXX)
-    IF(CMAKE_SIZEOF_VOID_P EQUAL 8)
-        SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=nocona")
-    ELSE(CMAKE_SIZEOF_VOID_P EQUAL 8)
-        SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=pentium4")
-    ENDIF(CMAKE_SIZEOF_VOID_P EQUAL 8)
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wall -Wno-deprecated -Werror -mtune=core2 -msse2")
+  # on GCC, build to target a second-gen pentium 4, but run as well as
+  # possible on a core 2.
+  IF(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    SET(SENSE_C_FLAGS -march=nocona)
+  ELSE(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    SET(SENSE_C_FLAGS -march=prescott)
+  ENDIF(CMAKE_SIZEOF_VOID_P EQUAL 8)
+
+  SET(SENSE_C_FLAGS "${SENSE_C_FLAGS} -Wall -Wno-deprecated -Werror -mtune=core2")
+  SET(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} ${SENSE_C_FLAGS})
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x ${SENSE_C_FLAGS}")
 ENDIF(CMAKE_COMPILER_IS_GNUCXX)
+
 IF(MSVC)
-    ADD_DEFINITIONS("-D_CRT_SECURE_NO_WARNINGS")
-    ADD_DEFINITIONS("-DNOMINMAX")
-	ADD_DEFINITIONS("-D_SECURE_SCL=0")
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /arch:SSE2")
+  # MSVC doesn't give us as precise control over optimization. Just
+  # enable SSE2
+  ADD_DEFINITIONS("-D_CRT_SECURE_NO_WARNINGS")
+  ADD_DEFINITIONS("-DNOMINMAX")
+  ADD_DEFINITIONS("-D_SECURE_SCL=0")
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /arch:SSE2")
 ENDIF(MSVC)
 
 IF(WIN32)
@@ -37,8 +45,6 @@ FIND_PACKAGE(Boost COMPONENTS filesystem system thread REQUIRED)
 FIND_PACKAGE(Python 3 REQUIRED)
 FIND_PACKAGE(PNG REQUIRED)
 FIND_PACKAGE(ZLIB REQUIRED)
-# Disabled until Berkelium can be made to work correctly
-# FIND_PACKAGE(Berkelium REQUIRED)
 
 ADD_DEFINITIONS(-DGLEW_STATIC)
 ADD_DEFINITIONS(-DBOOST_ALL_NO_LIB)
@@ -49,7 +55,6 @@ INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${PYTHON_INCLUDE_DIRS})
 INCLUDE_DIRECTORIES(${PNG_INCLUDE_DIR})
-# INCLUDE_DIRECTORIES(${BERKELIUM_INCLUDE_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
 INCLUDE(SenseConfig)
@@ -74,6 +79,7 @@ SET(SENSE_pipeline_srcs
 
 SET(SENSE_pipeline_hdrs
   pipeline/interface.hpp
+  pipeline/DefinitionTypes.hpp
   pipeline/Drawable.hpp
   pipeline/Image.hpp
   pipeline/Material.hpp
@@ -174,25 +180,50 @@ ADD_LIBRARY(SenseCore
             ${SENSE_python_world_srcs} ${SENSE_python_world_hdrs}
             ${SENSE_util_hdrs}
 )
+
 ADD_LIBRARY(SenseDummyPipe
             pipeline/dummy.cpp
 )
+
 IF(CMAKE_COMPILER_IS_GNUCXX)
-  SET_TARGET_PROPERTIES(SenseCore PROPERTIES COMPILE_FLAGS "-fPIC" LINK_FLAGS "-fPIC")
-  SET_TARGET_PROPERTIES(SenseDummyPipe PROPERTIES COMPILE_FLAGS "-fPIC" LINK_FLAGS "-fPIC")
+  SET_TARGET_PROPERTIES(SenseCore PROPERTIES
+                        COMPILE_FLAGS "-fPIC"
+                        LINK_FLAGS "-fPIC"
+  )
+  SET_TARGET_PROPERTIES(SenseDummyPipe PROPERTIES
+                        COMPILE_FLAGS "-fPIC"
+                        LINK_FLAGS "-fPIC"
+  )
 ENDIF(CMAKE_COMPILER_IS_GNUCXX)
 
-ADD_EXECUTABLE(SensEngine WIN32 main.cpp ${SENSE_client_srcs} ${SENSE_client_hdrs} ${SENSE_client_python_srcs} ${SENSE_client_python_hdrs})
+ADD_EXECUTABLE(SensEngine WIN32 main.cpp
+               ${SENSE_client_srcs} ${SENSE_client_hdrs}
+               ${SENSE_client_python_srcs} ${SENSE_client_python_hdrs}
+)
 IF(MSVC)
-  SET_TARGET_PROPERTIES(SensEngine PROPERTIES LINK_FLAGS "/ENTRY:mainCRTStartup")
+  SET_TARGET_PROPERTIES(SensEngine PROPERTIES
+                        LINK_FLAGS "/ENTRY:mainCRTStartup"
+  )
 ENDIF(MSVC)
-TARGET_LINK_LIBRARIES(SensEngine ${SENSE_client_libraries} ${SENSE_link_libraries})
+TARGET_LINK_LIBRARIES(SensEngine
+                      ${SENSE_client_libraries}
+                      ${SENSE_link_libraries}
+)
 
 ADD_LIBRARY(PySensEngine SHARED pysense.cpp)
-TARGET_LINK_LIBRARIES(PySensEngine ${SENSE_link_libraries} SenseDummyPipe)
-SET_TARGET_PROPERTIES(PySensEngine PROPERTIES PREFIX "" OUTPUT_NAME "SensEngine")
+TARGET_LINK_LIBRARIES(PySensEngine
+                      ${SENSE_link_libraries}
+                      SenseDummyPipe
+)
+SET_TARGET_PROPERTIES(PySensEngine PROPERTIES
+                      PREFIX ""
+                      OUTPUT_NAME "SensEngine"
+)
+
 IF(WIN32)
-  SET_TARGET_PROPERTIES(PySensEngine PROPERTIES SUFFIX ".pyd")
+  SET_TARGET_PROPERTIES(PySensEngine PROPERTIES
+                        SUFFIX ".pyd"
+  )
 ENDIF(WIN32)
 
 SOURCE_GROUP("pipeline" FILES ${SENSE_pipeline_srcs} ${SENSE_pipeline_hdrs})
