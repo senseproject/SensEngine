@@ -15,9 +15,14 @@
 #include "CoordinateComponent.hpp"
 #include "Entity.hpp"
 
+#include "3rdparty/glm/gtc/matrix_transform.hpp"
+
 CoordinateComponent::CoordinateComponent(Entity* owner)
   : Component(owner), local2parent(1.f), local2world(1.f), parent2world(1.f)
-{}
+{
+  local2world = glm::rotate(local2world, -90.f, glm::vec3(1.f, 0.f, 0.f));
+  local2world = glm::rotate(local2world, 180.f, glm::vec3(0.f, 0.f, 1.f));
+}
 
 CoordinateComponent::~CoordinateComponent()
 {}
@@ -26,14 +31,12 @@ void CoordinateComponent::setParentTransform(glm::mat4 par2wor)
 {
   parent2world = par2wor;
   local2world = local2parent * parent2world;
-  // TODO: send update message to other components
 }
 
 void CoordinateComponent::setTransform(glm::mat4 loc2par)
 {
   local2parent = loc2par;
   local2world = local2parent * parent2world;
-  // TODO: send update message to other components
 }
 
 void CoordinateComponent::receiveMessage(const Message&)

@@ -18,6 +18,7 @@ m = MaterialDef()
 m.vertex_shader = "simple"
 m.fragment_shader = "simple"
 m.add_uniform(name="teximg", type=MaterialDef.Texture, value="testimg")
+m.add_uniform(name="modelview", type=MaterialDef.ModelView)
 register_material("simple", m)
 
 m = MaterialDef()

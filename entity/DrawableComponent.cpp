@@ -48,7 +48,8 @@ void DrawableComponent::receiveMessage(const Message& msg)
     UNUSED(lmsg);
     auto end = m_owner->m_components.end();
     for(auto i = m_owner->m_components.begin(); i != end; ++i) {
-      coord = dynamic_cast<CoordinateComponent*>(*i);
+      if(!coord)
+        coord = dynamic_cast<CoordinateComponent*>(*i);
       // skel = dynamic_cast<SkeletonComponent*>(*i);
       // if(skel && coord) break;
     }
