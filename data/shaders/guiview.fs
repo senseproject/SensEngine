@@ -1,10 +1,10 @@
 in vec2 vtexcoord;
 
 // This unfortunate name is all Apple's fault
-out vec4 fcol;
+out vec4 gcol;
 
 uniform sampler2D guitex;
 
 void main(void) {
-  fcol = texture(guitex, vtexcoord);
+  gcol = texture(guitex, vtexcoord);
 }

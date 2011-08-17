@@ -1,6 +1,6 @@
-out vec4 fcol;
-out vec4 fnor;
-out vec2 fmat;
+out vec4 gcol;
+out vec4 gnor;
+out vec2 gmat;
 
 in vec3 vnor;
 in vec3 vtan;
@@ -11,7 +11,7 @@ uniform sampler2D teximg;
 
 void main(void)
 {
-  fcol = vec4(texture(teximg, vtex).rgb, 1.0);
-  fnor = vec4(vnor * 0.5 + 0.5, 0.0);
-  fmat = vec2(0.0, 0.0);
+  gcol = vec4(texture(teximg, vtex).rgb, 1.0);
+  gnor = vec4(vnor * 0.5 + 0.5, 0.0);
+  gmat = vec2(0.0, 0.0);
 }
