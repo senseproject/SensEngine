@@ -54,7 +54,8 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
 INCLUDE(SenseConfig)
 
-CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/client/Client_config.in.cpp ${CMAKE_CURRENT_BINARY_DIR}/client/Client_config.cpp)
+CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/client/Client_config.in.cpp
+               ${CMAKE_CURRENT_BINARY_DIR}/client/Client_config.cpp)
 
 ADD_SUBDIRECTORY(pipeline/${PIPELINE})
 
@@ -125,6 +126,7 @@ set(SENSE_entity_srcs
   entity/CoordinateComponent.cpp
   entity/DrawableComponent.cpp
   entity/Entity.cpp
+  entity/message/vtables.cpp
 )
 
 set(SENSE_entity_hdrs
@@ -132,6 +134,7 @@ set(SENSE_entity_hdrs
   entity/CoordinateComponent.hpp
   entity/DrawableComponent.hpp
   entity/Entity.hpp
+  entity/message/DrawMessage.hpp
 )
 
 SET(SENSE_link_libraries

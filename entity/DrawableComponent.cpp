@@ -14,6 +14,7 @@
 
 #include "DrawableComponent.hpp"
 #include "Entity.hpp"
+#include "message/DrawMessage.hpp"
 
 #include "world/DataManager.hpp"
 #include "pipeline/interface.hpp"
@@ -21,19 +22,22 @@
 DrawableComponent::DrawableComponent(Entity* owner)
   : Component(owner)
 {
-  m_owner->m_draw = this;
-
   m_mesh = m_owner->m_datamgr->loadMesh("monkey");
   m_mat = m_owner->m_datamgr->loadMaterial("simple");
 }
 
 DrawableComponent::~DrawableComponent()
-{
-  m_owner->m_draw = 0;
-}
+{}
 
 void DrawableComponent::receiveMessage(const Message& msg)
-{}
+{
+  try {
+    const DrawMessage& dmsg = dynamic_cast<const DrawMessage&>(msg);
+    draw(dmsg.pipe);
+    return;
+  } catch (std::bad_cast&) {
+  }
+}
 
 void DrawableComponent::draw(Pipeline* pipe)
 {

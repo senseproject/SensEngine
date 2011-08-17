@@ -15,6 +15,14 @@
 #include "Entity.hpp"
 #include "Component.hpp"
 
+Message::~Message() {}
+
+void Entity::sendMessage(const Message& m)
+{
+  for(auto i = m_components.begin(); i != m_components.end(); ++i)
+    (*i)->receiveMessage(m);
+}
+
 Component::Component(Entity* owner)
  : m_owner(owner)
 {
@@ -24,13 +32,6 @@ Component::Component(Entity* owner)
 Component::~Component()
 {
   m_owner->m_components.erase(m_owner->m_components.find(this));
-}
-
-void Component::sendMessage(const Message& m)
-{
-  for(auto i = m_owner->m_components.begin(); i != m_owner->m_components.end(); ++i)
-    if(*i != this)
-      (*i)->receiveMessage(m);
 }
 
 EntityFactory::~EntityFactory()

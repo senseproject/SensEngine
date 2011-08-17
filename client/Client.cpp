@@ -22,7 +22,7 @@
 #include "python/entity/api.hpp"
 
 #include "entity/Entity.hpp"
-#include "entity/DrawableComponent.hpp"
+#include "entity/message/DrawMessage.hpp"
 
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
@@ -89,7 +89,9 @@ bool SenseClient::tick()
   }
 
   m_datamgr->mainThreadTick();
-  m_test_ent->m_draw->draw(m_pipeline);
+  DrawMessage msg;
+  msg.pipe = m_pipeline;
+  m_test_ent->sendMessage(msg);
   m_pipeline->setRenderTarget(framebuffer);
   m_pipeline->render();
   m_pipeline->endFrame();

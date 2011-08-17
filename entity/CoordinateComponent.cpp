@@ -17,14 +17,10 @@
 
 CoordinateComponent::CoordinateComponent(Entity* owner)
   : Component(owner), local2parent(1.f), local2world(1.f), parent2world(1.f)
-{
-  m_owner->m_coord = this;
-}
+{}
 
 CoordinateComponent::~CoordinateComponent()
-{
-  m_owner->m_coord = 0;
-}
+{}
 
 void CoordinateComponent::setParentTransform(glm::mat4 par2wor)
 {

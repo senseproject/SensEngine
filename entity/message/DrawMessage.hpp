@@ -12,23 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef SENSE_ENTITY_COMPONENT_HPP
-#define SENSE_ENTITY_COMPONENT_HPP
+#ifndef SENSE_ENTITY_MESSAGE_DRAW_HPP
+#define SENSE_ENTITY_MESSAGE_DRAW_HPP
 
-struct Entity;
-struct Message;
+#include "../Entity.hpp"
 
-class Component
-{
-public:
-  Component(Entity* owner);
-  
-  virtual ~Component();
+class Pipeline;
 
-  virtual void receiveMessage(const Message&) = 0;
+struct DrawMessage : public Message {
+  virtual ~DrawMessage();
 
-protected:
-  Entity* m_owner;
+  Pipeline* pipe;
 };
 
-#endif // SENSE_ENTITY_COMPONENT_HPP
+#endif // SENSE_ENTITY_MESSAGE_DRAW_HPP

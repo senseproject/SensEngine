@@ -23,11 +23,12 @@
 #include <unordered_map>
 
 class Component;
-class CoordinateComponent;
-class DrawableComponent;
-class PhysicalComponent;
-
 class DataManager;
+
+struct Message
+{
+  virtual ~Message();
+};
 
 struct Entity
 {
@@ -36,14 +37,10 @@ struct Entity
   boost::uuids::uuid m_uuid;
   std::set<Component*> m_components;
 
-  // Components that need to have "quick access" by other components
-  // It's a hack, but there's really nothing to do for it.
-  CoordinateComponent* m_coord;
-  DrawableComponent* m_draw;
-  PhysicalComponent* m_phys;
-
-  // The high-level components needed by this Entity
+  // The high-level engine parts that Entities might need to reference
   DataManager* m_datamgr;
+
+  void sendMessage(const Message&);
 };
 
 // an EntityFactory subclass creates a specific entity by
@@ -56,7 +53,7 @@ struct Entity
 // Entity factories can have local data (hence the virtual destructor)
 // However, that local data should not affect the creation of an entity
 // except in trivial ways (for example, randomly selecting between multiple
-// possible mesh designs)
+// possible mesh designs or materials)
 class EntityFactory
 {
 public:
