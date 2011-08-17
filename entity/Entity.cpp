@@ -14,6 +14,7 @@
 
 #include "Entity.hpp"
 #include "Component.hpp"
+#include "message/LoadMessage.hpp"
 
 Message::~Message() {}
 
@@ -48,6 +49,7 @@ Entity* EntityManager::createEntity(std::string classname, boost::uuids::uuid* u
       e->m_uuid = *uuid;
     else
       e->m_uuid = m_uuidgen();
+    e->sendMessage(LoadMessage());
     m_entities.insert(std::make_pair(e->m_uuid, e));
   }
   return e;

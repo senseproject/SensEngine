@@ -18,6 +18,9 @@
 // Please don't put anything in here unless it really is a utility macro/inline.
 // I'm serious.
 
+// Mark a variable as unused so the compiler won't complain
+#define UNUSED(var) (void)var;
+
 // Make automatic exceptions easier to debug
 #define STRINGIFICATION(X) #X
 #define STRINGIFICATE(X) STRINGIFICATION(X)

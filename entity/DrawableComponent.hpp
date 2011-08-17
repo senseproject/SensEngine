@@ -22,6 +22,9 @@ struct Material;
 
 class Pipeline;
 
+class CoordinateComponent;
+class SkeletonComponent;
+
 class DrawableComponent : public Component
 {
 public:
@@ -35,6 +38,9 @@ public:
 private:
   DrawableMesh *m_mesh;
   Material* m_mat;
+
+  CoordinateComponent* coord;
+  SkeletonComponent* skel;
 };
 
 #endif // SENSE_ENTITY_DRAWABLECOMPONENT_HPP

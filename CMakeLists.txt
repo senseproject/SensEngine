@@ -135,6 +135,7 @@ set(SENSE_entity_hdrs
   entity/DrawableComponent.hpp
   entity/Entity.hpp
   entity/message/DrawMessage.hpp
+  entity/message/LoadMessage.hpp
 )
 
 SET(SENSE_link_libraries

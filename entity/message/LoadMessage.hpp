@@ -12,30 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef SENSE_ENTITY_COORDINATECOMPONENT_HPP
-#define SENSE_ENTITY_COORDINATECOMPONENT_HPP
+#ifndef SENSE_ENTITY_MESSAGE_LOAD_HPP
+#define SENSE_ENTITY_MESSAGE_LOAD_HPP
 
-#include "3rdparty/glm/glm.hpp"
+#include "../Entity.hpp"
 
-#include "Component.hpp"
+class Pipeline;
 
-class CoordinateComponent : public Component
-{
-public:
-  CoordinateComponent(Entity*);
-  virtual ~CoordinateComponent();
-
-  void setParentTransform(glm::mat4 par2wor);
-  void setTransform(glm::mat4 loc2par);
-
-  virtual void receiveMessage(const Message&);
-
-  const glm::mat4& transform() const { return local2world; }
-
-private:
-  glm::mat4 local2parent;
-  glm::mat4 local2world;
-  glm::mat4 parent2world;
+struct LoadMessage : public Message {
+  virtual ~LoadMessage();
 };
 
-#endif // SENSE_ENTITY_COORDINATECOMPONENT_HPP
+#endif // SENSE_ENTITY_MESSAGE_LOAD_HPP

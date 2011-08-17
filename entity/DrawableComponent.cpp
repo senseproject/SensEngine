@@ -13,14 +13,18 @@
 // limitations under the License.
 
 #include "DrawableComponent.hpp"
+#include "CoordinateComponent.hpp"
 #include "Entity.hpp"
 #include "message/DrawMessage.hpp"
+#include "message/LoadMessage.hpp"
 
 #include "world/DataManager.hpp"
 #include "pipeline/interface.hpp"
 
+#include "util/util.hpp"
+
 DrawableComponent::DrawableComponent(Entity* owner)
-  : Component(owner)
+  : Component(owner), coord(0), skel(0)
 {
   m_mesh = m_owner->m_datamgr->loadMesh("monkey");
   m_mat = m_owner->m_datamgr->loadMaterial("simple");
@@ -31,15 +35,31 @@ DrawableComponent::~DrawableComponent()
 
 void DrawableComponent::receiveMessage(const Message& msg)
 {
+  // DrawMessage
   try {
     const DrawMessage& dmsg = dynamic_cast<const DrawMessage&>(msg);
     draw(dmsg.pipe);
     return;
-  } catch (std::bad_cast&) {
-  }
+  } catch (std::bad_cast&) {}
+
+  // LoadMessage
+  try {
+    const LoadMessage& lmsg = dynamic_cast<const LoadMessage&>(msg);
+    UNUSED(lmsg);
+    auto end = m_owner->m_components.end();
+    for(auto i = m_owner->m_components.begin(); i != end; ++i) {
+      try {
+	coord = dynamic_cast<CoordinateComponent*>(*i);
+	break;
+      } catch (std::bad_cast&) {}
+    }
+
+    if(!coord)
+      throw std::runtime_error("DrawableComponent requires CoordinateComponent");
+  } catch (std::bad_cast&) {}
 }
 
 void DrawableComponent::draw(Pipeline* pipe)
 {
-  pipe->addDrawTask(m_mesh, m_mat, glm::mat4(1.f), Pipeline::PassStandard);
+  pipe->addDrawTask(m_mesh, m_mat, coord->transform(), Pipeline::PassStandard);
 }
